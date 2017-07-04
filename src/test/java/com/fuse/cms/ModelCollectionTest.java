@@ -50,7 +50,7 @@ public class ModelCollectionTest extends TestCase {
 
     { _("loadJsonFromFile");
       ModelCollection col = new ModelCollection();
-      assertEquals(col.loadJsonFromFile("data/ModelCollectionTest-loadJsonFromFile.json"), true);
+      assertEquals(col.loadJsonFromFile("testdata/ModelCollectionTest-loadJsonFromFile.json"), true);
       assertEquals(col.size(), 3);
       assertEquals(col.get(0).get("id"), "1");
       assertEquals(col.get(1).get("id"), "2");
@@ -62,8 +62,8 @@ public class ModelCollectionTest extends TestCase {
 
     { _("loadJsonFromFile with updates");
       ModelCollection col = new ModelCollection();
-      assertEquals(col.loadJsonFromFile("data/ModelCollectionTest-loadJsonFromFile.json"), true);
-      assertEquals(col.loadJsonFromFile("data/ModelCollectionTest-loadJsonFromFile.json"), true);
+      assertEquals(col.loadJsonFromFile("testdata/ModelCollectionTest-loadJsonFromFile.json"), true);
+      assertEquals(col.loadJsonFromFile("testdata/ModelCollectionTest-loadJsonFromFile.json"), true);
       assertEquals(col.size(), 3);
       assertEquals(col.get(0).get("id"), "1");
       assertEquals(col.get(1).get("id"), "2");

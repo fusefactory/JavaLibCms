@@ -25,9 +25,21 @@
             <scope>test</scope>
         </dependency>
 
-
-
+        <!-- https://github.com/fusefactory/JavaLibEvent -->
+        <dependency>
+            <groupId>com.github.fusefactory</groupId>
+            <artifactId>JavaLibEvent</artifactId>
+            <version>1.0.1</version>
+        </dependency>
     </dependencies>
+
+    <repositories>
+      <!-- necessary to use jitpack for loading dependencies from github repos -->
+      <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+      </repository>
+    </repositories>
 
     <build>
         <plugins>

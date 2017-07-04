@@ -1,0 +1,11 @@
+{
+    "books" : [
+        {"id": 1, "title": "Breakfast of Champions"},
+        {"id": 2, "title": "Cat's Cradle"},
+        {"id": 3, "title": "Slaughterhouse 5"},
+    ],
+
+    "authors" : [
+        {"id": 1, "name": "Kurt Vonnegut"}
+    ]
+}
