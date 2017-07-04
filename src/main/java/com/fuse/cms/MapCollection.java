@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.AbstractMap;
+import java.util.function.Function;
 import java.util.function.BiConsumer;
 
 import com.fuse.utils.Event;
@@ -14,6 +15,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
     private boolean bAddAsyncLoadedResultsToCollection;
     private boolean bDispatchOnUpdate;
+    private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
     private List<AsyncOperation<V>> activeAsyncOperations;
 
@@ -24,6 +26,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     // methods
 
     public MapCollection(){
+        syncLoader = null;
         asyncLoader = null;
         asyncOperationDoneEvent = new Event<>();
         bAddAsyncLoadedResultsToCollection = true;
@@ -118,6 +121,42 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
             thread.start();
         });
+    }
+
+    public void setSyncLoader(Function<K, V> syncLoader){
+        setSyncLoader(syncLoader, true, false);
+    }
+
+    public void setSyncLoader(Function<K, V> syncLoader, boolean createThreadedAsyncLoader, boolean createRegularAsyncLoader){
+        this.syncLoader = syncLoader;
+        //TODO: use this.syncLoader somehwere...
+
+        // create async loader?
+        if(createThreadedAsyncLoader != true && createRegularAsyncLoader != true)
+            return;
+
+        // create wrapper around given syncLoader to turn it into an async loader
+        BiConsumer<K, AsyncOperation<V>> asyncLoader = (K key, AsyncOperation<V> op) -> {
+            // get "result" using sync loader
+            V result = syncLoader.apply(key);
+
+            // if result is not null (which should be returned to indicate failure),
+            // add it to our operation's result
+            if(result != null){
+                op.add(result);
+            }
+
+            // finalize async operation and indicate if it was a success
+            op.finish(result != null);
+        };
+
+        if(createThreadedAsyncLoader){
+            setThreadedAsyncLoader(asyncLoader);
+            return; // don't continue with creating a non-threaded asyncLoader (which would overwrite the threaded async loader)
+        }
+
+        // create loader as non-threaded asyncLoader (maybe caller has already implemented a threading mechanism?)
+        setAsyncLoader(asyncLoader);
     }
 
     public boolean compareKeys(K keyA, K keyB){
