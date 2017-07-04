@@ -24,7 +24,7 @@ public class MapCollectionTest extends TestCase {
   public void testApp(){
     operations = new ArrayList<AsyncOperation<Item>>();
 
-    { TEST(".set(ForKey) / .get(ForKey)");
+    { TEST(".setForKey / .getForKey");
       MapCollection<String, Item> col = new MapCollection<>();
       assertEquals(col.getForKey("bob"), null);
       col.setForKey("bob", new Item(45));
@@ -233,6 +233,27 @@ public class MapCollectionTest extends TestCase {
       assertEquals(results.size(), 2);
       assertEquals(results.get(0), "asyncOperationDoneEvent: 602");
       assertEquals(results.get(1), "withSingleResult: 602");
+    }
+
+    { TEST(".setSyncLoader");
+
+      MapCollection<String, Item> col = new MapCollection<>();
+      assertEquals(col.getForKey("101"), null);
+
+      col.setSyncLoader((String str) -> {
+        try {
+          Integer number = Integer.parseInt(str);
+          return new Item(number);
+        } catch (java.lang.NumberFormatException exc){
+        }
+
+        return null;
+      });
+
+      Item it = col.getForKey("101");
+      assertEquals(it == null, false);
+      assertEquals(it.age, 101);
+      assertEquals(col.getForKey("ABC"), null);
     }
   }
 }

@@ -52,12 +52,24 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     }
 
     public V getForKey(K key){
+        return getForKey(key, true);
+    }
+
+    public V getForKey(K key, boolean useSyncLoader){
         Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
             return compareKeys(key, entry.getKey());
         });
 
         if(foundEntry != null)
             return foundEntry.getValue();
+
+        if(useSyncLoader && syncLoader != null){
+            V val = syncLoader.apply(key);
+            if(val != null){
+                setForKey(key, val);
+                return val;
+            }
+        }
 
         return null;
     }
@@ -129,16 +141,20 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
     public void setSyncLoader(Function<K, V> syncLoader, boolean createThreadedAsyncLoader, boolean createRegularAsyncLoader){
         this.syncLoader = syncLoader;
-        //TODO: use this.syncLoader somehwere...
 
-        // create async loader?
-        if(createThreadedAsyncLoader != true && createRegularAsyncLoader != true)
-            return;
+        if(createThreadedAsyncLoader){
+            setThreadedAsyncLoader(convertToAsync(syncLoader));
+            return; // don't continue with creating a non-threaded asyncLoader (which would overwrite the threaded async loader)
+        }
 
-        // create wrapper around given syncLoader to turn it into an async loader
-        BiConsumer<K, AsyncOperation<V>> asyncLoader = (K key, AsyncOperation<V> op) -> {
+        // create loader as non-threaded asyncLoader (maybe caller has already implemented a threading mechanism?)
+        setAsyncLoader(convertToAsync(syncLoader));
+    }
+
+    public BiConsumer<K, AsyncOperation<V>> convertToAsync(Function<K, V> func){
+        return (K key, AsyncOperation<V> op) -> {
             // get "result" using sync loader
-            V result = syncLoader.apply(key);
+            V result = func.apply(key);
 
             // if result is not null (which should be returned to indicate failure),
             // add it to our operation's result
@@ -149,14 +165,6 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
             // finalize async operation and indicate if it was a success
             op.finish(result != null);
         };
-
-        if(createThreadedAsyncLoader){
-            setThreadedAsyncLoader(asyncLoader);
-            return; // don't continue with creating a non-threaded asyncLoader (which would overwrite the threaded async loader)
-        }
-
-        // create loader as non-threaded asyncLoader (maybe caller has already implemented a threading mechanism?)
-        setAsyncLoader(asyncLoader);
     }
 
     public boolean compareKeys(K keyA, K keyB){
