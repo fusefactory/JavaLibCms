@@ -84,7 +84,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
             activeAsyncOperations.remove(doneOp);
         });
 
-        V cachedItem = this.getForKey(key);
+        V cachedItem = this.getForKey(key, false);
 
         if(cachedItem != null){
             op.add(cachedItem);
