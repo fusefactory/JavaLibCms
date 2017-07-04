@@ -24,7 +24,7 @@ public class MapCollectionTest extends TestCase {
   public void testApp(){
     operations = new ArrayList<AsyncOperation<Item>>();
 
-    { TEST(".set(ForKey) / .get(ForKey)");
+    { TEST(".setForKey / .getForKey");
       MapCollection<String, Item> col = new MapCollection<>();
       assertEquals(col.getForKey("bob"), null);
       col.setForKey("bob", new Item(45));
@@ -233,6 +233,42 @@ public class MapCollectionTest extends TestCase {
       assertEquals(results.size(), 2);
       assertEquals(results.get(0), "asyncOperationDoneEvent: 602");
       assertEquals(results.get(1), "withSingleResult: 602");
+    }
+
+    { TEST(".setSyncLoader");
+
+      MapCollection<String, Item> col = new MapCollection<>();
+      // without loader, getForKey for missing key simply returns null...
+      assertEquals(col.getForKey("101"), null);
+      assertEquals(col.size(), 0);
+
+      // register simple sync loader that tries to convert string into integer
+      col.setSyncLoader((String str) -> {
+        try {
+          Integer number = Integer.parseInt(str);
+          return new Item(number);
+        } catch (java.lang.NumberFormatException exc){
+        }
+
+        return null;
+      }, false /* don't create threaded async loader*/, true /* create non-threaded async loader */);
+
+      // no try getForKey with missing 101 key again
+      Item it = col.getForKey("101");
+      // should return an item and that item should be added to the collection
+      assertEquals(it == null, false);
+      assertEquals(it.age, 101);
+      assertEquals(col.size(), 1);
+      // non integer strings still return null and add nothing to collection
+      assertEquals(col.getForKey("ABC"), null);
+      assertEquals(col.size(), 1);
+
+      // an async loader should also be generated from the syncLoader
+      AsyncOperation<Item> op = col.getAsync("202");
+      assertEquals(op.isSuccess(), true);
+      assertEquals(op.result.get(0).age, 202);
+      assertEquals(col.size(), 2);
+      assertEquals(col.get(1).getValue().age, 202);
     }
   }
 }
