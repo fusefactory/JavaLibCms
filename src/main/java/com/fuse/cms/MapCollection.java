@@ -74,6 +74,15 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         return null;
     }
 
+    public void removeKey(K key){
+        Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
+            return compareKeys(key, entry.getKey());
+        });
+
+        if(foundEntry != null)
+            this.remove(foundEntry);
+    }
+
     public AsyncOperation<V> getAsync(K key){
         AsyncOperation<V> op = new AsyncOperation<V>();
         op.setInstantDispatch(!bDispatchOnUpdate);
