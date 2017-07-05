@@ -24,11 +24,16 @@ public class MapCollectionTest extends TestCase {
   public void testApp(){
     operations = new ArrayList<AsyncOperation<Item>>();
 
-    { TEST(".setForKey / .getForKey");
+    { TEST(".setForKey / .getForKey / .removeKey");
       MapCollection<String, Item> col = new MapCollection<>();
       assertEquals(col.getForKey("bob"), null);
       col.setForKey("bob", new Item(45));
       assertEquals(col.getForKey("bob").age, 45);
+      assertEquals(col.size(), 1);
+      col.removeKey("foobar"); // doesn't exist
+      assertEquals(col.size(), 1);
+      col.removeKey("bob");
+      assertEquals(col.size(), 0);
     }
 
     { TEST(".getAsync");

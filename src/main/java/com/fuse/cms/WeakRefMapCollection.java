@@ -23,10 +23,22 @@ public class WeakRefMapCollection<K, V> extends MapCollection<K, WeakReference<V
   }
 
   public V getInstance(K key){
-    WeakReference<V> weakRef = getForKey(key);
+      return getInstance(key, true);
+  }
+
+  public V getInstance(K key, boolean loadIfNotExist){
+    WeakReference<V> weakRef = getForKey(key, loadIfNotExist);
 
     if(weakRef == null)
         return null;
+
+    if(weakRef.get() == null || weakRef.isEnqueued()){
+        removeKey(key);
+        weakRef = getForKey(key);
+
+        if(weakRef == null)
+            return null;
+    }
 
     return weakRef.get();
   }
