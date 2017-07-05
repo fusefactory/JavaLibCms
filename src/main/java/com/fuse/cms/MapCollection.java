@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.AbstractMap;
+import java.util.function.Function;
 import java.util.function.BiConsumer;
 
 import com.fuse.utils.Event;
@@ -14,6 +15,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
     private boolean bAddAsyncLoadedResultsToCollection;
     private boolean bDispatchOnUpdate;
+    private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
     private List<AsyncOperation<V>> activeAsyncOperations;
 
@@ -24,6 +26,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     // methods
 
     public MapCollection(){
+        syncLoader = null;
         asyncLoader = null;
         asyncOperationDoneEvent = new Event<>();
         bAddAsyncLoadedResultsToCollection = true;
@@ -49,6 +52,10 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     }
 
     public V getForKey(K key){
+        return getForKey(key, true);
+    }
+
+    public V getForKey(K key, boolean useSyncLoader){
         Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
             return compareKeys(key, entry.getKey());
         });
@@ -56,7 +63,24 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         if(foundEntry != null)
             return foundEntry.getValue();
 
+        if(useSyncLoader && syncLoader != null){
+            V val = syncLoader.apply(key);
+            if(val != null){
+                setForKey(key, val);
+                return val;
+            }
+        }
+
         return null;
+    }
+
+    public void removeKey(K key){
+        Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
+            return compareKeys(key, entry.getKey());
+        });
+
+        if(foundEntry != null)
+            this.remove(foundEntry);
     }
 
     public AsyncOperation<V> getAsync(K key){
@@ -69,7 +93,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
             activeAsyncOperations.remove(doneOp);
         });
 
-        V cachedItem = this.getForKey(key);
+        V cachedItem = this.getForKey(key, false);
 
         if(cachedItem != null){
             op.add(cachedItem);
@@ -118,6 +142,38 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
             thread.start();
         });
+    }
+
+    public void setSyncLoader(Function<K, V> syncLoader){
+        setSyncLoader(syncLoader, true, false);
+    }
+
+    public void setSyncLoader(Function<K, V> syncLoader, boolean createThreadedAsyncLoader, boolean createRegularAsyncLoader){
+        this.syncLoader = syncLoader;
+
+        if(createThreadedAsyncLoader){
+            setThreadedAsyncLoader(convertToAsync(syncLoader));
+            return; // don't continue with creating a non-threaded asyncLoader (which would overwrite the threaded async loader)
+        }
+
+        // create loader as non-threaded asyncLoader (maybe caller has already implemented a threading mechanism?)
+        setAsyncLoader(convertToAsync(syncLoader));
+    }
+
+    public BiConsumer<K, AsyncOperation<V>> convertToAsync(Function<K, V> func){
+        return (K key, AsyncOperation<V> op) -> {
+            // get "result" using sync loader
+            V result = func.apply(key);
+
+            // if result is not null (which should be returned to indicate failure),
+            // add it to our operation's result
+            if(result != null){
+                op.add(result);
+            }
+
+            // finalize async operation and indicate if it was a success
+            op.finish(result != null);
+        };
     }
 
     public boolean compareKeys(K keyA, K keyB){
