@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.lang.Runnable;
 
@@ -97,6 +98,22 @@ public class CollectionBase<T> extends ArrayList<T> {
       while(it.hasNext()){
         T item = (T)it.next();
         func.accept(item);
+      }
+    });
+  }
+
+  public void eachWithIndex(BiConsumer<T, Integer> func){
+    // "lock" our list from modifications so we can safely iterate over it
+    // this way the logic in out func can safely call modificating methods
+    // (like add() add remove()) without causing errors; the modification will
+    // be queued and processed after we finished iterating and list is unlocked
+    lock(() -> {
+      Iterator it = iterator();
+      int idx=0;
+      while(it.hasNext()){
+        T item = (T)it.next();
+        func.accept(item, idx);
+        idx += 1;
       }
     });
   }

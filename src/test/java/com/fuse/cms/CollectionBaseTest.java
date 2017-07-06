@@ -167,4 +167,19 @@ public class CollectionBaseTest {
 
       assertEquals(foundModel, m2);
     }
+
+    @Test public void eachWithIndex(){
+      CollectionBase<Model> col = new CollectionBase<>();
+      col.add(new Model());
+      col.add(new Model());
+
+      List<String> strs = new ArrayList<>();
+      col.eachWithIndex((Model m, Integer idx) -> {
+        strs.add(Integer.toString(idx)+" for "+col.indexOf(m));
+      });
+
+      assertEquals(strs.size(), 2);
+      assertEquals(strs.get(0), "0 for 0");
+      assertEquals(strs.get(1), "1 for 1");
+    }
 }
