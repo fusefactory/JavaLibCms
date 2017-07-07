@@ -35,4 +35,22 @@ public class ModelCollectionBase extends Collection<Model> {
     this.add(m);
     return m;
   }
+
+  /**
+   * Convenience method to only accept model with a specific attribute value into this
+   * collection. This method only converts the given atribute name/value pair
+   * into a simple lambda which is passed on to parent class' accept method.
+   *
+   * The accept method will both execute on all items currently in the collection
+   * and test any items added in the future. See the Collection.accept for more details.
+   *
+   * @param attrName Name of the attribute for which we'll be specifying a specific required value
+   * @param value Value that the specified attribute should have for the model to be accepted into our collection
+   */
+  public CollectionFilter accept(String attrName, String value){
+    return super.accept((Model m) -> {
+      String modelValue = m.get(attrName, null);
+      return (value == null && modelValue == null) || ((value != null) && value.equals(modelValue));
+    });
+  }
 }

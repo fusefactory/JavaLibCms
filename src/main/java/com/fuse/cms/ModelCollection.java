@@ -117,19 +117,16 @@ public class ModelCollection extends ModelCollectionBase {
     return new JsonLoader(this).loadJson(json);
   }
 
-  public CollectionFilter accept(String attrName, String value){
-    return super.accept((Model m) -> {
-      String modelValue = m.get(attrName, null);
-      return (value == null && modelValue == null) || ((value != null) && value.equals(modelValue));
-    });
-  }
-
+  /** Convenience method that creates a new ModelCollection that filters
+   * on a specific attribute value (see accept ModelCollectionBase.accept method)
+   * and syncs from this collection.
+   *
+   * @param attrName Name of filter attribute, see accept method
+   * @param value Value of filter attribute, see accept method
+   */
   public ModelCollection filtered(String attrName, String value){
     ModelCollection newCol = new ModelCollection();
-    newCol.accept((Model m) -> {
-      String modelValue = m.get(attrName, null);
-      return (value == null && modelValue == null) || ((value != null) && value.equals(modelValue));
-    });
+    newCol.accept(attrName, value);
     newCol.sync(this);
     return newCol;
   }

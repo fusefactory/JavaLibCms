@@ -147,4 +147,11 @@ public class ModelTest {
   @Test public void follow_stopFollow(){
     System.out.println("TODO");
   }
+
+  @Test public void getId(){
+    Model m = new Model();
+    assertEquals(m.getId(), "");
+    m.set("id", "1013");
+    assertEquals(m.getId(), "1013");
+  }
 }
