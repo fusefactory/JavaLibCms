@@ -2,6 +2,11 @@ package com.fuse.cms;
 
 public class ModelCollectionBase extends Collection<Model> {
 
+  /** Default constructor; only creates an instantiator for this collection using setInstantiator method */
+  public ModelCollectionBase(){
+    this.setInstantiator(() -> new Model());
+  }
+
   public Model findById(String id){
     return findByAttr("id", id, false);
   }
@@ -30,9 +35,8 @@ public class ModelCollectionBase extends Collection<Model> {
     if(!createIfNotFound)
       return null;
 
-    Model m = new Model();
+    Model m = this.create();
     m.set(attr, value);
-    this.add(m);
     return m;
   }
 

@@ -73,31 +73,39 @@ class JsonLoader {
     // return true;
   }
 
+  /**
+   * Loads given json array by looping over each node and using the 'id' attribute
+   * to find any existing model in our collection. If no model is found, one is created.
+   * The found or created model is then populated with the data inside that json node.
+   *
+   * @param json The json array
+   *
+   * @return boolean Returns true is all json nodes were loaded successfully
+   */
   public boolean loadJson(JSONArray json){
     boolean allGood = true;
 
+    // loop over all json nodes
     for(int idx=0; idx<json.length(); idx++){
       JSONObject jsonObject = json.getJSONObject(idx);
       Model model = null;
-      Model newModel = null;
 
+      // try to find existing model for this node
       if(jsonObject.has(primaryKeyAttributeName)){
         String jsonId = jsonObject.get(primaryKeyAttributeName).toString();
         model = this.collection.findByAttr(primaryKeyAttributeName, jsonId);
       }
 
+      // no model found, create one
       if(model == null){
-        newModel = new Model();
-        model = newModel;
+        model = this.collection.create();
       }
 
+      // load model with json node's data
       allGood &= model.loadJson(jsonObject);
-
-      // add to collection (if we created a new model) AFTER parsing json
-      if(newModel != null)
-        this.collection.add(newModel);
     }
 
+    // return true if all json nodes were loaded without issues
     return allGood;
   }
 }
