@@ -218,6 +218,7 @@ public class Collection<T> extends CollectionBase<T> {
    * any items that are added in the future if they don't pass the predicate test.
    *
    * @param func The predicate test to perform on each item.
+   * @return CollectionFilter Returns the created CollectionFilter instance (which could then be stopped/started by the caller)
    */
   public CollectionFilter<T> accept(Predicate<T> func){
     if(colFilter == null)

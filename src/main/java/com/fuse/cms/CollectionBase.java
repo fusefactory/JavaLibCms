@@ -207,13 +207,14 @@ public class CollectionBase<T> extends ArrayList<T> {
   /**
    * Gives the collection an instantiator which enables the use of the create method
    *
-   * @params func The instantiator logic
+   * @param func The instantiator logic
    */
   public void setInstantiator(Supplier<T> func){
     this.instantiatorFunc = func;
   }
 
-  /** Creates an instance of the collection's item type, adds it to this collection and returns it
+  /**
+   * Creates an instance of the collection's item type, adds it to this collection and returns it
    *
    * @return The created instance
    */
