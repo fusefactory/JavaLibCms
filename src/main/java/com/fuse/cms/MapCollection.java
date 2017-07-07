@@ -17,7 +17,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     private boolean bDispatchOnUpdate;
     private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
-    private List<AsyncOperation<V>> activeAsyncOperations;
+    private MapCollection<K, AsyncOperation<V>> activeAsyncOperations;
 
     // events
 
@@ -31,19 +31,17 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         asyncOperationDoneEvent = new Event<>();
         bAddAsyncLoadedResultsToCollection = true;
         bDispatchOnUpdate = false;
-        activeAsyncOperations = new ArrayList<>();
+        activeAsyncOperations = null;
     }
 
     public void update(){
-        if(bDispatchOnUpdate){
-            // use reverse loop an NOT the for(AsyncOperation instance : activeAsyncOperations) syntax
-            // because a callback will remove the dispatched operation from activeAsyncOperations
-            for(int i=activeAsyncOperations.size()-1; i>=0; i--){
-                AsyncOperation<V> op = activeAsyncOperations.get(i);
+        if(bDispatchOnUpdate && activeAsyncOperations != null){
+            activeAsyncOperations.each((Map.Entry<K, AsyncOperation<V>> pair) -> {
+                AsyncOperation<V> op = pair.getValue();
                 if(op.isDone()){
                     op.dispatch(); // this will remove is from activeAsyncOperations
                 }
-            }
+            });
         }
     }
 
@@ -84,13 +82,25 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     }
 
     public AsyncOperation<V> getAsync(K key){
+        if(activeAsyncOperations != null && activeAsyncOperations.hasKey(key))
+            return activeAsyncOperations.getForKey(key);
+
+        // first see if there are any active asyncoperations for the same key
         AsyncOperation<V> op = new AsyncOperation<V>();
         op.setInstantDispatch(!bDispatchOnUpdate);
-        activeAsyncOperations.add(op);
+
+        // could not initialize in constructor, because
+        // if a MapCollection initializes another MapCollection in its contstructor
+        // you get an infinite recursive loop, so create activeAsyncOperations map here
+        // if necessary
+        if(activeAsyncOperations == null)
+            activeAsyncOperations = new MapCollection<>();
+
+        activeAsyncOperations.setForKey(key, op);
 
         op.doneEvent.addListener((AsyncOperation<V> doneOp) -> {
             this.asyncOperationDoneEvent.trigger(doneOp);
-            activeAsyncOperations.remove(doneOp);
+            activeAsyncOperations.removeKey(key);
         });
 
         V cachedItem = this.getForKey(key, false);
