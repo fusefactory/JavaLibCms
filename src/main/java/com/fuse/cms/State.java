@@ -17,18 +17,47 @@ public class State extends Model {
      * only be used to initialize an application's root state
      * (though the collection can be overwritten by a later call
      * to the setCollection method).
+     *
+     * It also creates a custom instantiator and filter for this collection, so
+     * any item that gets added to it will be a valid State item (see setCollection method).
      */
     public State(){
       ModelCollection col = new ModelCollection();
-      col.add(this);
       setCollection(col);
+      col.add(this);
     }
 
     public State(ModelCollection collection){
         setCollection(collection);
     }
 
-    public void setCollection(ModelCollection newCol){
+    /**
+     * Set 'central state repository' collection; this method will register
+     * an instantiator (used in child method) and filter on the collection to
+     * 'protect' it from non-State items.
+     *
+     * @param col The collection to use a central state repository.
+     */
+    public void setCollection(ModelCollection col){
+      // add instantiator so every item that gets added to this collection
+      // is a state instance linked to this collection
+      col.setInstantiator(() -> {
+        State s = new State();
+        s.setSafeCollection(col);
+        return s;
+      });
+
+      // only accept State items into the collection (and filter-out any non-State items currently in collection)
+      col.accept((Model m) -> m.getClass() == State.class);
+
+      setSafeCollection(col);
+    }
+
+    /**
+     * Sets this State's collection reference to a collection which is
+     * declared to be 'protected' from non-State items (see setCollection method)
+     */
+    private void setSafeCollection(ModelCollection newCol){
         this.collection = newCol;
     }
 
@@ -58,9 +87,8 @@ public class State extends Model {
       if(!createIfNotExist)
         return null;
 
-      State newState = new State(collection);
+      State newState = (State)collection.create();
       newState.set("id", id);
-      collection.add(newState);
       return newState;
     }
 
