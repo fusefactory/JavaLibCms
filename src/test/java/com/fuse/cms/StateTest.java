@@ -49,5 +49,23 @@ public class StateTest {
     // check that the collection won't accept non-state instances
     assertEquals(root.getCollection().add(new Model()), false); // rejected
     assertEquals(root.getCollection().size(), 1); // nothing added
+
+    // create a custom collection with a non-State item
+    ModelCollection customCollection = new ModelCollection();
+    customCollection.loadJsonFromFile("testdata/StateTest-jsonLoading.json");
+    assertEquals(customCollection.size(), 1);
+    assertEquals(customCollection.get(0).getClass(), Model.class);
+    assertEquals(customCollection.get(0).getId(), "first");
+    // also add a state item to the custom collection
+    State st = new State();
+    st.set("id", "second");
+    customCollection.add(st);
+
+    // use custom collection as our state repository
+    root.setCollection(customCollection);
+    // verify (only) all non-State items are removed
+    assertEquals(customCollection.size(), 1);
+    assertEquals(customCollection.get(0).getClass(), State.class);
+    assertEquals(customCollection.get(0).getId(), "second");
   }
 }
