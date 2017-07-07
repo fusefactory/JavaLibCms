@@ -28,8 +28,7 @@ public class CollectionBaseTest {
 
     private CollectionBase<Model> collection;
 
-    @Test
-    public void addEvent(){
+    @Test public void addEvent(){
       strings = new ArrayList<String>();
 
       strings.clear();
@@ -181,5 +180,27 @@ public class CollectionBaseTest {
       assertEquals(strs.size(), 2);
       assertEquals(strs.get(0), "0 for 0");
       assertEquals(strs.get(1), "1 for 1");
+    }
+
+    @Test public void create_and_setInstantiator(){
+      class StrItem {
+        public String str;
+      }
+
+      // a collectin without instantiator can't create new items
+      CollectionBase<StrItem> col = new CollectionBase<>();
+      assertEquals(col.create(), null);
+      assertEquals(col.size(), 0);
+      // give the collection an instantiator using setInstantiator
+      col.setInstantiator(() -> {
+        return new StrItem();
+      });
+
+      // now it can create items
+      StrItem stri = col.create();
+      assertEquals(stri == null, false);
+      assertEquals(col.size(), 1);
+      stri.str = "oi";
+      assertEquals(col.get(0).str, "oi");
     }
 }

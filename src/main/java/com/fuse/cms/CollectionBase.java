@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.function.Predicate;
 import java.lang.Runnable;
 
@@ -24,6 +25,8 @@ class ColMod<T> {
 public class CollectionBase<T> extends ArrayList<T> {
   private int lockCount;
   private List<ColMod<T>> modQueue;
+  /** null by default but can be set by caller using setInstantiator to be able to use the create method */
+  private Supplier<T> instantiatorFunc;
   public Event<T> addEvent;
   public Event<T> removeEvent;
   public Test<T> beforeAddTest;
@@ -199,5 +202,26 @@ public class CollectionBase<T> extends ArrayList<T> {
     endLock();
 
     return resultItem;
+  }
+
+  /**
+   * Gives the collection an instantiator which enables the use of the create method
+   *
+   * @params func The instantiator logic
+   */
+  public void setInstantiator(Supplier<T> func){
+    this.instantiatorFunc = func;
+  }
+
+  /** Creates an instance of the collection's item type, adds it to this collection and returns it
+   *
+   * @return The created instance
+   */
+  public T create(){
+    if(this.instantiatorFunc == null)
+      return null;
+    T newInstance = this.instantiatorFunc.get();
+    this.add(newInstance);
+    return newInstance;
   }
 }
