@@ -125,6 +125,15 @@ public class ModelCollection extends ModelCollectionBase {
     return new JsonLoader(this).loadJson(json);
   }
 
+  /**
+   * Load json string, mostly used for testing
+   *
+   * @param jsonContent A string containing json data
+   */
+  public boolean loadJson(String jsonContent){
+    return new JsonLoader(this).loadJson(jsonContent);
+  }
+
   /** Convenience method that creates a new ModelCollection that filters
    * on a specific attribute value (see accept ModelCollectionBase.accept method)
    * and syncs from this collection.

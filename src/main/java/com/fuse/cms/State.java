@@ -17,9 +17,17 @@ public class State extends Model {
      * only be used to initialize an application's root state
      * (though the collection can be overwritten by a later call
      * to the setCollection method).
+     *
+     * It also creates a custom instantiator and filter for this collection, so
+     * any item that gets added to it will be a valid State item.
      */
     public State(){
       ModelCollection col = new ModelCollection();
+      // add instantiator so every item that gets added to this collection
+      // is a state instance linked to this collection
+      col.setInstantiator(() -> new State(col));
+      // only accept State items into the collection (and filter-out any non-State items currently in collection)
+      col.accept((Model m) -> m.getClass() == State.class);
       col.add(this);
       setCollection(col);
     }
