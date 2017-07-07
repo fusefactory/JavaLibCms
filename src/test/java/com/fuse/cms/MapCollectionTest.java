@@ -7,6 +7,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.List;
 import java.util.ArrayList;
 
+import java.lang.Thread;
+
 public class MapCollectionTest {
   // main routine invoked by test runner
   class Item{
@@ -276,5 +278,41 @@ public class MapCollectionTest {
     assertEquals(op.result.get(0).age, 202);
     assertEquals(col.size(), 2);
     assertEquals(col.get(1).getValue().age, 202);
+  }
+
+  @Test public void getAsync_withSimultanousIdenticalRequests(){
+    MapCollection<String, Item> col = new MapCollection<>();
+    List<String> strings = new ArrayList<>();
+    CompletableFuture<String> future = new CompletableFuture<>();
+
+    col.setThreadedAsyncLoader((String s, AsyncOperation<Item> op) -> {
+      strings.add(s);
+
+      // some artificial delay
+      try{
+        Thread.sleep(1);
+      } catch(java.lang.InterruptedException exc){
+      }
+
+      op.add(new Item(1));
+      op.finish();
+      future.complete(s);
+    });
+
+    // fetch same item simultanous couple of times
+    col.getAsync("10");
+    col.getAsync("10");
+    col.getAsync("10");
+
+    try{
+      assertEquals(future.get(), "10");
+    } catch(java.lang.InterruptedException exc){
+      assertEquals("failure", "InterruptedException: "+exc.toString());
+    } catch(java.util.concurrent.ExecutionException exc){
+      assertEquals("failure", "ExecutionException: "+exc.toString());
+    }
+
+    assertEquals(strings.size(), 1);
+    assertEquals(strings.get(0), "10");
   }
 }
