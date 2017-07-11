@@ -8,7 +8,7 @@
     <packaging>jar</packaging>
 
     <name>Fuse CMS package</name>
-    <url>https://jitpack.io/#fusefactory/cms/1.1.0</url>
+    <url>https://jitpack.io/#fusefactory/JavaLibCms/1.1.0</url>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
