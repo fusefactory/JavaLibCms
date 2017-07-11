@@ -124,6 +124,11 @@ public class ModelBase {
     });
   }
 
+  /** Simply use the id attribute as id */
+  public String getId(){
+    return get("id", "");
+  }
+
   public boolean getBool(String attr){
     return getBool(attr, false);
   }

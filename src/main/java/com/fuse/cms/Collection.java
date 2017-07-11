@@ -207,7 +207,19 @@ public class Collection<T> extends CollectionBase<T> {
     collectionTransformers = new ArrayList<>();
   }
 
-  /// register filter logic
+  /**
+   * The accept method creates a filter that only lets items into our
+   * collection if the given predicate logic returns true for that item.
+   *
+   * The filter will be executed on the current collection; removing all
+   * items for which the predicate returns false.
+   *
+   * The filter will register a listener for a beforeAdd listener and block
+   * any items that are added in the future if they don't pass the predicate test.
+   *
+   * @param func The predicate test to perform on each item.
+   * @return CollectionFilter Returns the created CollectionFilter instance (which could then be stopped/started by the caller)
+   */
   public CollectionFilter<T> accept(Predicate<T> func){
     if(colFilter == null)
       colFilter = new CollectionFilter<T>(this);

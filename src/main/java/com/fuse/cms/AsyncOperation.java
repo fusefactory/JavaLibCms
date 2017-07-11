@@ -6,11 +6,11 @@ import com.fuse.utils.Event;
 public class AsyncOperation<ItemType> {
     private boolean bInstantDispatch;
     private boolean bDispatched, bDone, bSuccess, bExecuted;
-    private Consumer<AsyncOperation<ItemType>> doneFunc, successFunc, failureFunc, abortFunc, executedFunc, noResultFunc;
-    private Consumer<Collection<ItemType>> resultFunc;
-    private Consumer<ItemType> singleResultFunc;
 
-    public Event<AsyncOperation<ItemType>> doneEvent;
+    public Event<AsyncOperation<ItemType>> doneEvent, successEvent, failureEvent, abortEvent, executedEvent, noResultEvent;
+    public Event<Collection<ItemType>> resultEvent;
+    public Event<ItemType> singleResultEvent;
+
     public Collection<ItemType> result;
 
     public AsyncOperation(){
@@ -19,6 +19,13 @@ public class AsyncOperation<ItemType> {
         bSuccess = false;
         bExecuted = false;
         doneEvent = new Event<>();
+        successEvent = new Event<>();
+        failureEvent = new Event<>();
+        abortEvent = new Event<>();
+        executedEvent = new Event<>();
+        noResultEvent = new Event<>();
+        resultEvent = new Event<>();
+        singleResultEvent = new Event<>();
         result = new Collection<>();
         bInstantDispatch = true;
     }
@@ -31,31 +38,27 @@ public class AsyncOperation<ItemType> {
     public boolean isNoResult(){ return bDone && result.isEmpty(); }
 
     public AsyncOperation<ItemType> whenDone(Consumer<AsyncOperation<ItemType>> func){
-        doneFunc = func; if(bDispatched && isDone()) func.accept(this); return this;}
+        doneEvent.addListener(func); if(bDispatched && isDone()) func.accept(this); return this;}
     public AsyncOperation<ItemType> onSuccess(Consumer<AsyncOperation<ItemType>> func){
-        successFunc = func; if(bDispatched && isSuccess()) func.accept(this); return this; }
+        successEvent.addListener(func); if(bDispatched && isSuccess()) func.accept(this); return this; }
     public AsyncOperation<ItemType> onFailure(Consumer<AsyncOperation<ItemType>> func){
-        failureFunc = func; if(bDispatched && isFailure()) func.accept(this); return this; }
+        failureEvent.addListener(func); if(bDispatched && isFailure()) func.accept(this); return this; }
     public AsyncOperation<ItemType> whenAborted(Consumer<AsyncOperation<ItemType>> func){
-        abortFunc = func; if(bDispatched && isAborted()) func.accept(this); return this; }
+        abortEvent.addListener(func); if(bDispatched && isAborted()) func.accept(this); return this; }
     public AsyncOperation<ItemType> whenExecuted(Consumer<AsyncOperation<ItemType>> func){
-        executedFunc = func; if(bDispatched && isExecuted()) func.accept(this); return this; }
-
+        executedEvent.addListener(func); if(bDispatched && isExecuted()) func.accept(this); return this; }
     public AsyncOperation<ItemType> withResult(Consumer<Collection<ItemType>> func){
-        resultFunc = func; if(bDispatched && isDone()) func.accept(this.result); return this; }
+        resultEvent.addListener(func); if(bDispatched && isDone()) func.accept(this.result); return this; }
+    public AsyncOperation<ItemType> whenNoResult(Consumer<AsyncOperation<ItemType>> func){
+        noResultEvent.addListener(func); if(isNoResult()) func.accept(this); return this; }
 
     public AsyncOperation<ItemType> withSingleResult(Consumer<ItemType> func){
-        singleResultFunc = func;
-        if(bDispatched && isDone() && func != null)
-        for(ItemType item : result){
-            func.accept(item);
-        }
-
+        singleResultEvent.addListener(func);
+        if(bDispatched && isDone())
+            for(ItemType item : result)
+                func.accept(item);
         return this;
     }
-
-    public AsyncOperation<ItemType> whenNoResult(Consumer<AsyncOperation<ItemType>> func){
-        noResultFunc = func; if(isNoResult()) func.accept(this); return this; }
 
     public void add(ItemType item){
         result.add(item);
@@ -73,38 +76,27 @@ public class AsyncOperation<ItemType> {
     public void dispatch(){
         bDispatched = true;
 
-        if(isAborted() && abortFunc != null)
-            abortFunc.accept(this);
+        if(isAborted())
+            abortEvent.trigger(this);
 
-        if(isDone() && doneFunc != null)
-            doneFunc.accept(this);
+        if(isExecuted())
+            executedEvent.trigger(this);
 
-        if(isExecuted() && executedFunc != null)
-            executedFunc.accept(this);
+        if(isSuccess())
+            successEvent.trigger(this);
 
-        if(isSuccess() && successFunc != null)
-            successFunc.accept(this);
-
-        if(isFailure() && failureFunc  != null)
-            failureFunc.accept(this);
+        if(isFailure())
+            failureEvent.trigger(this);
 
         if(isDone()){
-            if(doneFunc != null)
-                doneFunc.accept(this);
-
             doneEvent.trigger(this);
+            resultEvent.trigger(this.result);
 
-            if(resultFunc != null)
-                resultFunc.accept(this.result);
+            if(result.isEmpty())
+                noResultEvent.trigger(this);
 
-            if(result.isEmpty() && noResultFunc != null)
-                noResultFunc.accept(this);
-
-            if(singleResultFunc != null){
-                for(ItemType item : result){
-                    singleResultFunc.accept(item);
-                }
-            }
+            for(ItemType item : result)
+                singleResultEvent.trigger(item);
         }
     }
 
