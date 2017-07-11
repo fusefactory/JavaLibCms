@@ -283,6 +283,7 @@ public class MapCollectionTest {
   @Test public void getAsync_withSimultanousIdenticalRequests(){
     MapCollection<String, Item> col = new MapCollection<>();
     List<String> strings = new ArrayList<>();
+    List<Item> items = new ArrayList<>();
     CompletableFuture<String> future = new CompletableFuture<>();
 
     col.setThreadedAsyncLoader((String s, AsyncOperation<Item> op) -> {
@@ -290,7 +291,7 @@ public class MapCollectionTest {
 
       // some artificial delay
       try{
-        Thread.sleep(1);
+        Thread.sleep(50);
       } catch(java.lang.InterruptedException exc){
       }
 
@@ -300,9 +301,9 @@ public class MapCollectionTest {
     });
 
     // fetch same item simultanous couple of times
-    col.getAsync("10");
-    col.getAsync("10");
-    col.getAsync("10");
+    col.getAsync("10").withSingleResult((Item it) -> items.add(it));
+    col.getAsync("10").withSingleResult((Item it) -> items.add(it));
+    col.getAsync("10").withSingleResult((Item it) -> items.add(it));
 
     try{
       assertEquals(future.get(), "10");
@@ -314,5 +315,6 @@ public class MapCollectionTest {
 
     assertEquals(strings.size(), 1);
     assertEquals(strings.get(0), "10");
+    assertEquals(items.size(), 3);
   }
 }
