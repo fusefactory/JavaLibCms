@@ -28,7 +28,6 @@ public class ModelBaseTest {
   }
 
 
-
   @Test public void set_and_get(){
     strings = new ArrayList<String>();
     ModelBase m = new ModelBase();
@@ -121,6 +120,13 @@ public class ModelBaseTest {
     assertEquals(m.getInt("no"), 0);
     // w/ default value
     assertEquals(m.getInt("foobarxx", 123), 123);
+  }
+
+  @Test public void set_int(){
+    ModelBase m = new ModelBase();
+    assertEquals(m.get("foo"), null);
+    m.set("foo", 44);
+    assertEquals(m.get("foo"), "44");
   }
 
   @Test public void getFloat(){
