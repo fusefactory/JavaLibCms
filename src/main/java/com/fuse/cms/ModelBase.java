@@ -11,18 +11,18 @@ import java.util.function.BiConsumer;
 
 import com.fuse.utils.Event;
 
-class Mod {
-  public String setAttr;
-  public String setValue;
-}
-
-class AttributeChangeArgs {
-  public ModelBase model;
-  public String attr;
-  public String value;
-}
-
 public class ModelBase {
+
+  private class Mod {
+    public String setAttr;
+    public String setValue;
+  }
+
+  public class AttributeChangeArgs {
+    public ModelBase model;
+    public String attr;
+    public String value;
+  }
 
   private Map<String, String> attributes;
   private int lockCount;

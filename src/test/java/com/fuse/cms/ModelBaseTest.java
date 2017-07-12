@@ -65,7 +65,7 @@ public class ModelBaseTest {
     ModelBase model = new ModelBase();
 
     strings.clear();
-    model.attributeChangeEvent.addListener((AttributeChangeArgs arg) -> {
+    model.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs arg) -> {
       strings.add(arg.attr+"//"+arg.value);
     }, this);
 
