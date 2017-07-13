@@ -81,6 +81,15 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
             this.remove(foundEntry);
     }
 
+    public void removeValue(V value){
+        Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
+            return compareValues(value, entry.getValue());
+        });
+
+        if(foundEntry != null)
+            this.remove(foundEntry);
+    }
+
     public AsyncOperation<V> getAsync(K key){
         if(activeAsyncOperations != null && activeAsyncOperations.hasKey(key))
             return activeAsyncOperations.getForKey(key);
@@ -187,13 +196,17 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         };
     }
 
-    public boolean compareKeys(K keyA, K keyB){
+    private boolean compareKeys(K keyA, K keyB){
         // check for any custom registered compare filterFuncs
         return defaultKeyComparator(keyA, keyB);
     }
 
     public boolean defaultKeyComparator(K keyA, K keyB){
         return keyA.equals(keyB);
+    }
+
+    private boolean compareValues(V a, V b){
+        return a.equals(b);
     }
 
     public void setAddAsyncLoadedResultsToCollection(boolean newValue){
