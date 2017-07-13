@@ -14,6 +14,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private boolean bDispatchOnUpdate;
     private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
+    // TODO; turn into normal list, so we have no circular dependencies between AsyncFacade and Collection class
     private MapCollection<K, AsyncOperation<V>> activeAsyncOperations;
 
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
