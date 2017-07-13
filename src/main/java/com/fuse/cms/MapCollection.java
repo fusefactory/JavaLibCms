@@ -130,6 +130,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     }
 
     public void setForKey(K key, V value){
+        removeKey(key); // remove existing
         Map.Entry<K,V> entry = new AbstractMap.SimpleEntry<>(key, value);
         add(entry);
     }
