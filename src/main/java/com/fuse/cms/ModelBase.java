@@ -22,6 +22,7 @@ public class ModelBase {
     public ModelBase model;
     public String attr;
     public String value;
+    public String previousValue;
   }
 
   private Map<String, String> attributes;
@@ -87,6 +88,7 @@ public class ModelBase {
       args.model = this;
       args.attr = attr;
       args.value = val;
+      args.previousValue = existing;
       attributeChangeEvent.trigger(args);
     }
   }

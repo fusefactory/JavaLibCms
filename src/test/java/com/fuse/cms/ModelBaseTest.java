@@ -66,11 +66,13 @@ public class ModelBaseTest {
 
     strings.clear();
     model.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs arg) -> {
-      strings.add(arg.attr+"//"+arg.value);
+      strings.add(arg.attr+"//"+arg.value+"//"+(arg.previousValue == null ? "" : arg.previousValue));
     }, this);
 
     model.set("aa", "bb");
-    assertEquals(joined(), "aa//bb");
+    assertEquals(joined(), "aa//bb//");
+    model.set("aa", "cc");
+    assertEquals(joined(), "aa//bb//aa//cc//bb");
   }
 
   @Test public void copy(){
