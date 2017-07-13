@@ -11,18 +11,18 @@ import java.util.function.BiConsumer;
 
 import com.fuse.utils.Event;
 
-class Mod {
-  public String setAttr;
-  public String setValue;
-}
-
-class AttributeChangeArgs {
-  public ModelBase model;
-  public String attr;
-  public String value;
-}
-
 public class ModelBase {
+
+  private class Mod {
+    public String setAttr;
+    public String setValue;
+  }
+
+  public class AttributeChangeArgs {
+    public ModelBase model;
+    public String attr;
+    public String value;
+  }
 
   private Map<String, String> attributes;
   private int lockCount;
@@ -57,6 +57,15 @@ public class ModelBase {
     return (result == null) ? defaultValue : result;
   }
 
+  /**
+   * Changes the value of the specified attribute to the specified value.
+   * * Invokes onAttributesSet virtual method
+   * * Triggers changeEvent if the attribute value was changed.
+   * * Triggers attributeChangeEvent if the attribute value was changed.
+   * Trigger
+   * @param attr The name/key of the attribute
+   * @param value The new value
+   */
   public void set(String attr, String val){
     if(isLocked()){
       Mod mod = new Mod();
@@ -142,6 +151,7 @@ public class ModelBase {
   public int getInt(String attr){
     return getInt(attr, 0);
   }
+
   public int getInt(String attr, int defaultValue){
     String str = this.get(attr);
     if(str == null) return defaultValue;
@@ -150,6 +160,15 @@ public class ModelBase {
     } catch (java.lang.NumberFormatException exc){
     }
     return defaultValue;
+  }
+
+  /**
+   * Converts value to a string and sets attribute using default set method.
+   * @param attr Attribute to give a numeric value
+   * @param value Number to convert to string
+   */
+  public void set(String attr, int value){
+    set(attr, Integer.toString(value));
   }
 
   public float getFloat(String attr){
@@ -164,6 +183,10 @@ public class ModelBase {
     } catch (java.lang.NumberFormatException exc){
     }
     return defaultValue;
+  }
+
+  public void set(String attr, float value){
+    set(attr, Float.toString(value));
   }
 
   public float[] getVec3(String attr){

@@ -24,7 +24,7 @@ class AttributeTransformer {
   };
 
   public void start(){
-    model.attributeChangeEvent.addListener((AttributeChangeArgs args) -> {
+    model.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs args) -> {
       if(args.attr.equals(attr))
         this.func.accept(args.value);
     }, this);
@@ -83,7 +83,7 @@ class ModelFollower {
       this.target.set(key, val);
     });
 
-    this.source.attributeChangeEvent.addListener((AttributeChangeArgs args) -> {
+    this.source.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs args) -> {
         this.target.set(args.attr, args.value);
     }, this);
   }

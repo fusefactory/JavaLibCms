@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 import java.lang.Thread;
 
-public class MapCollectionTest {
+public class AsyncFacadeTest {
   // main routine invoked by test runner
   class Item{
     public int age;
@@ -18,28 +18,12 @@ public class MapCollectionTest {
 
   private List<AsyncOperation<Item>> operations;
 
-  @Test public void setForKey_getForKey_removeKey(){
-    operations = new ArrayList<AsyncOperation<Item>>();
-
-    MapCollection<String, Item> col = new MapCollection<>();
-    assertEquals(col.getForKey("bob"), null);
-    col.setForKey("bob", new Item(45));
-    assertEquals(col.getForKey("bob").age, 45);
-    col.setForKey("bob", new Item(46));
-    assertEquals(col.size(), 1);
-    assertEquals(col.getForKey("bob").age, 46);
-    col.removeKey("foobar"); // doesn't exist
-    assertEquals(col.size(), 1);
-    col.removeKey("bob");
-    assertEquals(col.size(), 0);
-  }
-
   @Test public void getAsync(){
     operations = new ArrayList<AsyncOperation<Item>>();
 
     List<AsyncOperation<Item>> collectionDoneOps = new ArrayList<>();
 
-    MapCollection<String, Item> col = new MapCollection<>();
+    AsyncFacade<String, Item> col = new AsyncFacade<>();
     col.asyncOperationDoneEvent.addListener((AsyncOperation<Item> opDone) -> {
       collectionDoneOps.add(opDone);
     });
@@ -58,7 +42,6 @@ public class MapCollectionTest {
       assertEquals(operations.size(), 1);
       assertEquals(operations.get(0), op);
       operations.clear();
-      assertEquals(col.size(), 0);
       assertEquals(collectionDoneOps.size(), 1);
       collectionDoneOps.clear();
     }
@@ -86,53 +69,42 @@ public class MapCollectionTest {
       operations.clear();
       assertEquals(collectionDoneOps.size(), 1);
       collectionDoneOps.clear();
-      assertEquals(col.size(), 1); // the operations new item is also added to our collection
-      assertEquals(col.get(0).getValue(), op.result.get(0));
-      // not async
-      assertEquals(col.get(0).getKey().equals("bobby"), true);
-      assertEquals(col.get(0).getValue().age, 3);
-      assertEquals(col.getForKey("bobby").age, 3);
     }
 
-    { // try getAsync on already loaded keyA
-      List<AsyncOperation<Item>> abortedOps = new ArrayList<>();
-      List<AsyncOperation<Item>> doneOps = new ArrayList<>();
-
-      assertEquals(col.size(), 1);
-      assertEquals(col.hasKey("bobby"), true);
-
-      AsyncOperation<Item> op = col.getAsync("bobby")
-      .whenDone((AsyncOperation<Item> opDone) -> {
-        doneOps.add(opDone);
-      })
-      .whenAborted((AsyncOperation<Item> opAborted) -> {
-        abortedOps.add(opAborted);
-      });
-
-      assertEquals(op.isDone(), true);
-      assertEquals(op.isAborted(), true); // aborted
-      assertEquals(op.isExecuted(), false);
-      assertEquals(op.isFailure(), false);
-      assertEquals(op.isSuccess(), false);
-      assertEquals(op.result.size(), 1); // operation resulted in one (existing) item
-      assertEquals(doneOps.size(), 1);
-      assertEquals(abortedOps.size(), 1);
-      assertEquals(col.size(), 1); // unchanged, nothing new added this operation
-      assertEquals(collectionDoneOps.size(), 1);
-      collectionDoneOps.clear();
-    }
+    // { // try getAsync on already loaded keyA
+    //   List<AsyncOperation<Item>> abortedOps = new ArrayList<>();
+    //   List<AsyncOperation<Item>> doneOps = new ArrayList<>();
+    //
+    //   AsyncOperation<Item> op = col.getAsync("bobby")
+    //   .whenDone((AsyncOperation<Item> opDone) -> {
+    //     doneOps.add(opDone);
+    //   })
+    //   .whenAborted((AsyncOperation<Item> opAborted) -> {
+    //     abortedOps.add(opAborted);
+    //   });
+    //
+    //   assertEquals(op.isDone(), true);
+    //   assertEquals(op.isAborted(), true); // aborted
+    //   assertEquals(op.isExecuted(), false);
+    //   assertEquals(op.isFailure(), false);
+    //   assertEquals(op.isSuccess(), false);
+    //   assertEquals(op.result.size(), 1); // operation resulted in one (existing) item
+    //   assertEquals(doneOps.size(), 1);
+    //   assertEquals(abortedOps.size(), 1);
+    //   assertEquals(collectionDoneOps.size(), 1);
+    //   collectionDoneOps.clear();
+    // }
   }
 
   @Test public void setThreadedAsyncLoader(){
     operations = new ArrayList<AsyncOperation<Item>>();
 
-    MapCollection<String, Item> col = new MapCollection<>();
+    AsyncFacade<String, Item> col = new AsyncFacade<>();
 
     // no async loaded; will abort
     AsyncOperation<Item> op = col.getAsync("foobar");
     assertEquals(op.isDone(), true);
     assertEquals(op.isAborted(), true);
-    assertEquals(col.size(), 0);
 
     // register threaded async loader
     col.setThreadedAsyncLoader((String name, AsyncOperation<Item> opAsync) -> {
@@ -166,37 +138,13 @@ public class MapCollectionTest {
     assertEquals(op.isDone(), true);
     assertEquals(op.isAborted(), false);
     assertEquals(op.isExecuted(), true);
-    assertEquals(col.size(), 1);
-    assertEquals(col.get(0).getKey().equals("foobar"), true);
-  }
 
-  @Test public void setAddAsyncLoadedResultsToCollection(){
-    operations = new ArrayList<AsyncOperation<Item>>();
-    MapCollection<Integer, Item> col = new MapCollection<>();
-
-    col.setAsyncLoader((Integer no, AsyncOperation<Item> op) -> {
-      // just create one with age value of three
-      Item newItem = new Item(no);
-      op.add(newItem);
-      op.finish();
-    });
-
-    col.getAsync(501);
-    assertEquals(col.size(), 1);
-    assertEquals(col.get(0).getValue().age, 501);
-
-    col.setAddAsyncLoadedResultsToCollection(false);
-    AsyncOperation<Item> op = col.getAsync(123);
-    assertEquals(col.size(), 1);
-    assertEquals(col.get(0).getValue().age, 501);
-    assertEquals(op.result.size(), 1);
-    assertEquals(op.result.get(0).age, 123);
   }
 
   @Test public void setDispatchOnUpdate(){
     operations = new ArrayList<AsyncOperation<Item>>();
 
-    MapCollection<Integer, Item> col = new MapCollection<>();
+    AsyncFacade<Integer, Item> col = new AsyncFacade<>();
 
     col.setAsyncLoader((Integer no, AsyncOperation<Item> op) -> {
       // just create one with age value of three
@@ -248,11 +196,7 @@ public class MapCollectionTest {
   @Test public void setSyncLoader(){
     operations = new ArrayList<AsyncOperation<Item>>();
 
-    MapCollection<String, Item> col = new MapCollection<>();
-    // without loader, getForKey for missing key simply returns null...
-    assertEquals(col.getForKey("101"), null);
-    assertEquals(col.size(), 0);
-
+    AsyncFacade<String, Item> col = new AsyncFacade<>();
     // register simple sync loader that tries to convert string into integer
     col.setSyncLoader((String str) -> {
       try {
@@ -265,25 +209,21 @@ public class MapCollectionTest {
     }, false /* don't create threaded async loader*/, true /* create non-threaded async loader */);
 
     // no try getForKey with missing 101 key again
-    Item it = col.getForKey("101");
+    Item it = col.getSync("101");
     // should return an item and that item should be added to the collection
     assertEquals(it == null, false);
     assertEquals(it.age, 101);
-    assertEquals(col.size(), 1);
     // non integer strings still return null and add nothing to collection
-    assertEquals(col.getForKey("ABC"), null);
-    assertEquals(col.size(), 1);
+    assertEquals(col.getSync("ABC"), null);
 
     // an async loader should also be generated from the syncLoader
     AsyncOperation<Item> op = col.getAsync("202");
     assertEquals(op.isSuccess(), true);
     assertEquals(op.result.get(0).age, 202);
-    assertEquals(col.size(), 2);
-    assertEquals(col.get(1).getValue().age, 202);
   }
 
   @Test public void getAsync_withSimultanousIdenticalRequests(){
-    MapCollection<String, Item> col = new MapCollection<>();
+    AsyncFacade<String, Item> col = new AsyncFacade<>();
     List<String> strings = new ArrayList<>();
     List<Item> items = new ArrayList<>();
     CompletableFuture<String> future = new CompletableFuture<>();

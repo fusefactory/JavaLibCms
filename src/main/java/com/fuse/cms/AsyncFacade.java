@@ -9,27 +9,19 @@ import java.util.function.BiConsumer;
 
 import com.fuse.utils.Event;
 
-public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
+public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
-    // attributes
-
-    private boolean bAddAsyncLoadedResultsToCollection;
     private boolean bDispatchOnUpdate;
     private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
     private MapCollection<K, AsyncOperation<V>> activeAsyncOperations;
 
-    // events
-
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
-    // methods
-
-    public MapCollection(){
+    public AsyncFacade(){
         syncLoader = null;
         asyncLoader = null;
         asyncOperationDoneEvent = new Event<>();
-        bAddAsyncLoadedResultsToCollection = true;
         bDispatchOnUpdate = false;
         activeAsyncOperations = null;
     }
@@ -45,40 +37,10 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         }
     }
 
-    boolean hasKey(K key){
-        return getForKey(key) != null;
-    }
-
-    public V getForKey(K key){
-        return getForKey(key, true);
-    }
-
-    public V getForKey(K key, boolean useSyncLoader){
-        Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
-            return compareKeys(key, entry.getKey());
-        });
-
-        if(foundEntry != null)
-            return foundEntry.getValue();
-
-        if(useSyncLoader && syncLoader != null){
-            V val = syncLoader.apply(key);
-            if(val != null){
-                setForKey(key, val);
-                return val;
-            }
-        }
-
-        return null;
-    }
-
-    public void removeKey(K key){
-        Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
-            return compareKeys(key, entry.getKey());
-        });
-
-        if(foundEntry != null)
-            this.remove(foundEntry);
+    public V getSync(K key){
+        if(syncLoader == null)
+            return null;
+        return syncLoader.apply(key);
     }
 
     public AsyncOperation<V> getAsync(K key){
@@ -103,22 +65,14 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
             activeAsyncOperations.removeKey(key);
         });
 
-        V cachedItem = this.getForKey(key, false);
-
-        if(cachedItem != null){
-            op.add(cachedItem);
-            op.abort();
-        }
-
-        if(op.isDone())
-            return op;
-
-        {   // copy all items added to the operation's result collection to our collection
-            op.result.addEvent.addListener((V newItem) -> {
-                if(this.bAddAsyncLoadedResultsToCollection)
-                    this.setForKey(key, newItem);
-            });
-        }
+        // CACHING; currently no caching mechanism implemented for AsyncFacade
+        // V cachedItem = this.getForKey(key, false);
+        // if(cachedItem != null){
+        //     op.add(cachedItem);
+        //     op.abort();
+        // }
+        // if(op.isDone())
+        //     return op;
 
         if(this.asyncLoader != null){
             this.asyncLoader.accept(key, op);
@@ -129,16 +83,14 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         return op;
     }
 
-    public void setForKey(K key, V value){
-        removeKey(key); // remove existing
-        Map.Entry<K,V> entry = new AbstractMap.SimpleEntry<>(key, value);
-        add(entry);
-    }
-
     public void setAsyncLoader(BiConsumer<K, AsyncOperation<V>> newLoader){
         asyncLoader = newLoader;
     }
 
+    /**
+     * Conveniene method that wraps the given async loader in a theaded runner
+     * @param newLoader The (non-threaded) async loader logic
+     */
     public void setThreadedAsyncLoader(BiConsumer<K, AsyncOperation<V>> newLoader){
         // create wrapping lambda which creates a threaded runner
         setAsyncLoader((K key, AsyncOperation<V> op) -> {
@@ -171,7 +123,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         setAsyncLoader(convertToAsync(syncLoader));
     }
 
-    public BiConsumer<K, AsyncOperation<V>> convertToAsync(Function<K, V> func){
+    private BiConsumer<K, AsyncOperation<V>> convertToAsync(Function<K, V> func){
         return (K key, AsyncOperation<V> op) -> {
             // get "result" using sync loader
             V result = func.apply(key);
@@ -185,19 +137,6 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
             // finalize async operation and indicate if it was a success
             op.finish(result != null);
         };
-    }
-
-    public boolean compareKeys(K keyA, K keyB){
-        // check for any custom registered compare filterFuncs
-        return defaultKeyComparator(keyA, keyB);
-    }
-
-    public boolean defaultKeyComparator(K keyA, K keyB){
-        return keyA.equals(keyB);
-    }
-
-    public void setAddAsyncLoadedResultsToCollection(boolean newValue){
-        bAddAsyncLoadedResultsToCollection = newValue;
     }
 
     public void setDispatchOnUpdate(boolean value){

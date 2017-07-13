@@ -135,13 +135,13 @@ public class CollectionTest extends TestCase {
       assertEquals(col2.get(1), col1.get(3));
     }
 
-    { _("forAll");
+    { _("withAll");
       Collection<TmpKlass> col1 = new Collection<TmpKlass>();
       List<String> strings = new ArrayList<String>();
       col1.add(new TmpKlass("a"));
       col1.add(new TmpKlass("b"));
       col1.add(new TmpKlass("c"));
-      col1.forAll((TmpKlass item) -> {
+      col1.withAll((TmpKlass item) -> {
         strings.add(item.attr);
       }, this);
 
@@ -153,7 +153,7 @@ public class CollectionTest extends TestCase {
       assertEquals(strings.size(), 4);
       assertEquals(strings.get(3), "d");
 
-      col1.stopForAll(this);
+      col1.stopWithAll(this);
       col1.add(new TmpKlass("e"));
       assertEquals(strings.size(), 4);
       assertEquals(strings.get(3), "d");

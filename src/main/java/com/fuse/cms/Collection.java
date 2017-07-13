@@ -263,18 +263,43 @@ public class Collection<T> extends CollectionBase<T> {
     return newCol;
   }
 
-  /// execute given consumer for all current and all future items
-  public void forAll(Consumer<T> func, Object owner){
+  /**
+   * @param func Function to execute for all current and all future items in this collection
+   */
+  public void withAll(Consumer<T> func){
+    withAll(func, null);
+  }
+
+  /**
+   * @param func Function to execute for all current and all future items in this collection
+   * @param owner owner for the listener for all future add items which can be used to remove the listener
+   */
+  public void withAll(Consumer<T> func, Object owner){
     // run for all current events
     this.each(func);
     // register listener to run for all future events
     this.addEvent.addListener(func, owner);
   }
 
+  /**
+   * Convenience method for readability (a call to stopWithAll looks more related)
+   * to a previous withAll call than add call to .addEvent.removeListeners
+   */
+  public void stopWithAll(Object owner){
+    System.out.println("Collection.stopWithAll is DEPRECATED, call addEvent.removeListeners directly.");
+    this.addEvent.removeListeners(owner);
+  }
+
+  public void forAll(Consumer<T> func, Object owner){
+    System.out.println("Collection.forAll is DEPRECATED, use withAll method");
+    withAll(func, owner);
+  }
+
   // stop registered "forAll" callbacks
   // TODO differentiate between forAll callbacks and addEvent listeners
   public void stopForAll(Object owner){
-    this.addEvent.removeListeners(owner);
+    System.out.println("Collection.stopForAll is DEPRECATED, use stopWithAll method");
+    stopWithAll(owner);
   }
 
   // returns a new collection which mirrores the current collection

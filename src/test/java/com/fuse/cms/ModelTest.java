@@ -43,7 +43,7 @@ public class ModelTest {
 
     m.set("name", "Bob");
 
-    m.attributeChangeEvent.addListener((AttributeChangeArgs args) -> {
+    m.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs args) -> {
       strings.add(args.value);
     }, this);
 
