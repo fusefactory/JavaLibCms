@@ -1,16 +1,12 @@
 package com.fuse.cms;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.util.List;
 import java.util.ArrayList;
 
-public class CollectionTest extends TestCase {
-  public CollectionTest( String testName ){ super( testName ); }
-  public static Test suite(){ return new TestSuite( CollectionTest.class ); }
-
+public class CollectionTest {
   class TmpKlass {
     public String attr;
     public TmpKlass(){ attr = new String(); }
@@ -22,10 +18,7 @@ public class CollectionTest extends TestCase {
     public TmpKlass2(String newName){ name = newName; }
   }
 
-  // main routine invoked by test runner
-  public void testApp(){
-    { _("accept");
-
+  @Test public void accept(){
       Collection<TmpKlass> col = new Collection<TmpKlass>();
       assertEquals(col.size(), 0);
       TmpKlass instance = new TmpKlass();
@@ -44,9 +37,9 @@ public class CollectionTest extends TestCase {
       instance.attr = "OK";
       col.add(instance);
       assertEquals(col.size(), 1);
-    }
+  }
 
-    { _("sync");
+  @Test public void sync(){
       Collection<TmpKlass> source = new Collection<TmpKlass>();
       Collection<TmpKlass> target = new Collection<TmpKlass>();
 
@@ -88,12 +81,11 @@ public class CollectionTest extends TestCase {
       source.remove(0);
       // should NOT be synced to target
       assertEquals(target.size(), 2);
-    }
+  }
 
-    { _("sync(false)");
-
-    Collection<TmpKlass> source = new Collection<TmpKlass>();
-    Collection<TmpKlass> target = new Collection<TmpKlass>();
+  @Test public void sync_false(){
+      Collection<TmpKlass> source = new Collection<TmpKlass>();
+      Collection<TmpKlass> target = new Collection<TmpKlass>();
 
       // add two models to source
       TmpKlass instance = new TmpKlass("#1");
@@ -114,9 +106,9 @@ public class CollectionTest extends TestCase {
       assertEquals(target.size(), 2);
       assertEquals(target.get(0).attr, "#1");
       assertEquals(target.get(1).attr, "#2");
-    }
+  }
 
-    { _("filtered");
+  @Test public void filtered(){
       Collection<TmpKlass> col1 = new Collection<TmpKlass>();
       TmpKlass item = new TmpKlass("a");
       col1.add(new TmpKlass("ab"));
@@ -133,9 +125,9 @@ public class CollectionTest extends TestCase {
       assertEquals(col2.size(), 2);
       assertEquals(col1.size(), 4);
       assertEquals(col2.get(1), col1.get(3));
-    }
+  }
 
-    { _("withAll");
+  @Test public void withAll(){
       Collection<TmpKlass> col1 = new Collection<TmpKlass>();
       List<String> strings = new ArrayList<String>();
       col1.add(new TmpKlass("a"));
@@ -157,9 +149,9 @@ public class CollectionTest extends TestCase {
       col1.add(new TmpKlass("e"));
       assertEquals(strings.size(), 4);
       assertEquals(strings.get(3), "d");
-    }
+  }
 
-    { _("transform");
+  @Test public void transform(){
       // create source collection with one item
       Collection<TmpKlass> col1 = new Collection<TmpKlass>();
       col1.add(new TmpKlass("a"));
@@ -186,10 +178,5 @@ public class CollectionTest extends TestCase {
       col1.add(new TmpKlass("c"));
       assertEquals(col2.size(), 1);
       assertEquals(col2.get(0).name, "-b");
-    }
-  }
-
-  private void _(String name){
-    System.out.println("TEST: "+name);
   }
 }
