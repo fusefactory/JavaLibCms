@@ -16,7 +16,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
     // TODO; turn into normal list, so we have no circular dependencies between AsyncFacade and Collection class
     private MapCollection<K, AsyncOperation<V>> activeAsyncOperations;
-
+    private MapCollection<K, V> usedMapCollection;
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
     public AsyncFacade(){
@@ -25,6 +25,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         asyncOperationDoneEvent = new Event<>();
         bDispatchOnUpdate = false;
         activeAsyncOperations = null;
+        usedMapCollection = null;
     }
 
     public void update(){
@@ -39,18 +40,28 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     }
 
     public V getSync(K key){
+        if(usedMapCollection != null){
+            return usedMapCollection.getForKey(key);
+        }
+
         if(syncLoader == null)
             return null;
         return syncLoader.apply(key);
     }
 
     public AsyncOperation<V> getAsync(K key){
+        // first see if there are any active asyncoperations for the same key
         if(activeAsyncOperations != null && activeAsyncOperations.hasKey(key))
             return activeAsyncOperations.getForKey(key);
 
-        // first see if there are any active asyncoperations for the same key
-        AsyncOperation<V> op = new AsyncOperation<V>();
-        op.setInstantDispatch(!bDispatchOnUpdate);
+        AsyncOperation<V> op;
+        // if we're using a map collection as "backend", it will provide the AsyncOperations
+        if(usedMapCollection != null){
+            op = usedMapCollection.getAsync(key);
+        } else {
+            op = new AsyncOperation<V>();
+            op.setInstantDispatch(!bDispatchOnUpdate);
+        }
 
         // could not initialize in constructor, because
         // if a MapCollection initializes another MapCollection in its contstructor
@@ -74,6 +85,11 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         // }
         // if(op.isDone())
         //     return op;
+
+        // the map collection will perform logic of completing the operation
+        if(usedMapCollection != null){
+            return op;
+        }
 
         if(this.asyncLoader != null){
             this.asyncLoader.accept(key, op);
@@ -142,5 +158,9 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public void setDispatchOnUpdate(boolean value){
         bDispatchOnUpdate = value;
+    }
+
+    public void use(MapCollection map){
+        usedMapCollection = map;
     }
 };

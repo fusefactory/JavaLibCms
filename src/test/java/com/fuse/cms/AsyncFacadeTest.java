@@ -259,4 +259,41 @@ public class AsyncFacadeTest {
     assertEquals(strings.get(0), "10");
     assertEquals(items.size(), 3);
   }
+
+  @Test public void use_MapCollection(){
+    class Custom {
+      public String val;
+      public Custom(String val){ this.val = val; }
+    }
+
+    MapCollection<String, Custom> map = new MapCollection<>();
+    AsyncFacade<String, Custom> facade = new AsyncFacade<>();
+
+    List<String> strings = new ArrayList<>();
+    // give a loader to the MapCollection (not the facade)
+    map.setSyncLoader((String str) -> {
+      strings.add(str);
+      return new Custom("Custom: "+str);
+    });
+
+    // facade has no loader
+    assertEquals(facade.getSync("Test1"), null);
+    assertEquals(facade.getAsync("Test2").withSingleResult((Custom cust) -> {
+      strings.add(cust.val);
+    }).isAborted(), true);
+    assertEquals(strings.size(), 0);
+
+    // connect facade to map collection
+    facade.use(map);
+
+    // facade loads uses map collection loader
+    assertEquals(facade.getSync("Test3").val, "Custom: Test3");
+    assertEquals(facade.getAsync("Test4").withSingleResult((Custom cust) -> {
+      strings.add(cust.val + " Asynced");
+    }).isAborted(), false);
+    assertEquals(strings.get(0), "Test3");
+    assertEquals(strings.get(1), "Test4");
+    assertEquals(strings.get(2), "Custom: Test4 Asynced");
+    assertEquals(strings.size(), 3);
+  }
 }
