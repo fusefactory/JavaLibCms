@@ -112,7 +112,6 @@ class CollectionSyncer<T> {
   }
 }
 
-
 class CollectionTransformerBase {
   public Object owner;
 
@@ -192,6 +191,7 @@ class CollectionTransformer<S,T> extends CollectionTransformerBase {
   }
 }
 
+
 public class Collection<T> extends CollectionBase<T> {
 
   private CollectionFilter<T> colFilter;
@@ -255,11 +255,19 @@ public class Collection<T> extends CollectionBase<T> {
     return colSyncer;
   }
 
-  /// create new collection instance which syncs from this but registers the given filter
+  /** create new collection instance which syncs from this but registers the given filter */
   public Collection<T> filtered(Predicate<T> func){
+    return filtered(func, true);
+  }
+
+  /** create new collection instance which applies the given filter and copies
+   * the content of this collection. If the active param is true, it will also
+   * register listeners to stay synced with this collection.
+   */
+  public Collection<T> filtered(Predicate<T> func, boolean active){
     Collection<T> newCol = new Collection<T>();
     newCol.accept(func);
-    newCol.sync(this);
+    newCol.sync(this, active);
     return newCol;
   }
 
