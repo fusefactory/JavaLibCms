@@ -3,6 +3,7 @@ package com.fuse.cms;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
+import java.io.File;
 import java.nio.file.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -72,7 +73,8 @@ public class ModelCollectionTest {
     @Test public void toJsonString(){
         ModelCollection col = new ModelCollection();
         assertEquals(col.loadJsonFromFile("testdata/ModelCollectionTest-toJsonString.json"), true);
-        assertEquals(col.toJsonString(), "[]");
+        assertEquals(col.size(), 3);
+        assertEquals(col.toJsonString(), "[{\"id\":\"1\",\"value\":\"1ne\"},{\"id\":\"2\",\"value\":\"2wo\"},{\"id\":\"3\",\"value\":\"3hree\"}]");
     }
 
     @Test public void saveJsonToFile(){
@@ -90,6 +92,12 @@ public class ModelCollectionTest {
         }
 
         assertEquals(content, col.toJsonString());
+        try{
+            (new File("testdata/ModelCollectionTest-saveJsonToFile.output.tmp.json")).delete();
+        } catch(Exception e) {
+            // if any error occurs
+            e.printStackTrace();
+        }
     }
 
     @Test public void accept(){

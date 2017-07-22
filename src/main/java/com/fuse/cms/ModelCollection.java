@@ -3,7 +3,9 @@ package com.fuse.cms;
 import java.util.logging.*;
 import java.util.Iterator;
 import java.nio.file.*;
+import java.io.IOException;
 import org.json.*;
+
 
 class JsonLoader {
   private ModelCollectionBase collection;
@@ -113,6 +115,42 @@ class JsonLoader {
 class JsonWriter {
   private ModelCollectionBase collection;
   private Logger logger;
+
+  public JsonWriter(ModelCollectionBase col){
+    logger = Logger.getLogger(JsonLoader.class.getName());
+    collection = col;
+  }
+
+  public String toJsonString(){
+    JSONStringer stringer = new JSONStringer();
+    stringer.array();
+
+    collection.each((Model model) -> {
+      stringer.object();
+
+      model.each((String key, String value) -> {
+        stringer.key(key).value(value);
+      });
+
+      stringer.endObject();
+    });
+
+    return stringer.endArray().toString();
+  }
+
+  public boolean saveToFile(String filePath){
+    logger.fine("saving collection json to file: " + filePath);
+
+    try {
+      Files.write(Paths.get(filePath), this.toJsonString().getBytes());
+      return true;
+    } catch (IOException exc) {
+      logger.warning("IOException: "+exc.toString());
+      exc.printStackTrace();
+    }
+
+    return false;
+  }
 }
 
 public class ModelCollection extends ModelCollectionBase {
@@ -140,11 +178,11 @@ public class ModelCollection extends ModelCollectionBase {
   }
 
   public String toJsonString(){
-    return "";
+    return (new JsonWriter(this)).toJsonString();
   }
 
   public boolean saveJsonToFile(String filePath){
-    return false;
+    return (new JsonWriter(this)).saveToFile(filePath);
   }
 
   /** Convenience method that creates a new ModelCollection that filters
