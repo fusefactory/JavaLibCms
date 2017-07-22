@@ -164,13 +164,19 @@ public class ModelBase {
     return defaultValue;
   }
 
-  /**
-   * Converts value to a string and sets attribute using default set method.
-   * @param attr Attribute to give a numeric value
-   * @param value Number to convert to string
-   */
-  public void set(String attr, int value){
-    set(attr, Integer.toString(value));
+  public long getLong(String attr){
+    return getLong(attr, 0l);
+  }
+
+  public long getLong(String attr, long defaultValue){
+    String str = this.get(attr);
+    if(str == null) return defaultValue;
+
+    try {
+      return Long.parseLong(str);
+    } catch (java.lang.NumberFormatException exc){
+    }
+    return defaultValue;
   }
 
   public float getFloat(String attr){
@@ -189,6 +195,19 @@ public class ModelBase {
 
   public void set(String attr, float value){
     set(attr, Float.toString(value));
+  }
+
+  /**
+   * Converts value to a string and sets attribute using default set method.
+   * @param attr Attribute to give a numeric value
+   * @param value Number to convert to string
+   */
+  public void set(String attr, int value){
+    set(attr, Integer.toString(value));
+  }
+
+  public void set(String attr, long value){
+    set(attr, Long.toString(value));
   }
 
   public float[] getVec3(String attr){
