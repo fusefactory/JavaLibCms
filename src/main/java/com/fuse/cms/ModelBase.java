@@ -210,6 +210,10 @@ public class ModelBase {
     set(attr, Long.toString(value));
   }
 
+  public void set(String attr, boolean value){
+    set(attr, Boolean.toString(value));
+  }
+
   public float[] getVec3(String attr){
     float[] defaultValue = new float[]{0.0f,0.0f,0.0f};
     return getVecX(attr, 3, defaultValue);
