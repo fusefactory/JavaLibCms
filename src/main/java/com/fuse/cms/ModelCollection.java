@@ -110,6 +110,11 @@ class JsonLoader {
   }
 }
 
+class JsonWriter {
+  private ModelCollectionBase collection;
+  private Logger logger;
+}
+
 public class ModelCollection extends ModelCollectionBase {
 
   @Override
@@ -132,6 +137,14 @@ public class ModelCollection extends ModelCollectionBase {
    */
   public boolean loadJson(String jsonContent){
     return new JsonLoader(this).loadJson(jsonContent);
+  }
+
+  public String toJsonString(){
+    return "";
+  }
+
+  public boolean saveJsonToFile(String filePath){
+    return false;
   }
 
   /** Convenience method that creates a new ModelCollection that filters
