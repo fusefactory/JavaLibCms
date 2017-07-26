@@ -202,6 +202,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     }
 
     public boolean defaultKeyComparator(K keyA, K keyB){
+        if(keyA == null || keyB == null) return false;
         return keyA.equals(keyB);
     }
 
