@@ -125,17 +125,17 @@ public class CollectionBase<T> extends ArrayList<T> {
     return lockCount > 0;
   }
 
-  private void lock(Runnable func){
+  protected void lock(Runnable func){
     beginLock();
       func.run();
     endLock();
   }
 
-  private void beginLock(){
+  protected void beginLock(){
     lockCount++;
   }
 
-  private void endLock(){
+  protected void endLock(){
     lockCount--;
 
     // still locked (this was a nested lock)? nothing more to do
