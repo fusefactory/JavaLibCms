@@ -97,9 +97,8 @@ public class CollectionBase<T> extends ArrayList<T> {
     // (like add() add remove()) without causing errors; the modification will
     // be queued and processed after we finished iterating and list is unlocked
     lock(() -> {
-      Iterator it = iterator();
-      while(it.hasNext()){
-        T item = (T)it.next();
+      for(int idx=0; idx<this.size(); idx++){
+        T item = this.get(idx);
         func.accept(item);
       }
     });
@@ -111,12 +110,9 @@ public class CollectionBase<T> extends ArrayList<T> {
     // (like add() add remove()) without causing errors; the modification will
     // be queued and processed after we finished iterating and list is unlocked
     lock(() -> {
-      Iterator it = iterator();
-      int idx=0;
-      while(it.hasNext()){
-        T item = (T)it.next();
+      for(int idx=0; idx<this.size(); idx++){
+        T item = this.get(idx);
         func.accept(item, idx);
-        idx += 1;
       }
     });
   }
