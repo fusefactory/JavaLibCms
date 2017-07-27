@@ -53,6 +53,8 @@ public class AsyncOperation<ItemType> {
         resultEvent.addListener(func); if(bDispatched && isDone()) func.accept(this.result); return this; }
     public AsyncOperation<ItemType> whenNoResult(Consumer<AsyncOperation<ItemType>> func){
         noResultEvent.addListener(func); if(isNoResult()) func.accept(this); return this; }
+    public AsyncOperation<ItemType> whenNoResult(Runnable func){
+        noResultEvent.addListener((AsyncOperation<ItemType> op) -> func.run()); if(isNoResult()) func.run(); return this; }
 
     public AsyncOperation<ItemType> withSingleResult(Consumer<ItemType> func){
         singleResultEvent.addListener(func);
