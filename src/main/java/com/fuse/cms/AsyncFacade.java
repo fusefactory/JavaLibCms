@@ -1,9 +1,10 @@
 package com.fuse.cms;
 
+import java.util.Set;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.AbstractMap;
 import java.util.function.Function;
 import java.util.function.BiConsumer;
 
@@ -15,7 +16,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
     // TODO; turn into normal list, so we have no circular dependencies between AsyncFacade and Collection class
-    private MapCollection<K, AsyncOperation<V>> activeAsyncOperations;
+    private Map<K, AsyncOperation<V>> activeAsyncOperations;
     private MapCollection<K, V> usedMapCollection;
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
@@ -30,12 +31,13 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public void update(){
         if(bDispatchOnUpdate && activeAsyncOperations != null){
-            activeAsyncOperations.each((Map.Entry<K, AsyncOperation<V>> pair) -> {
-                AsyncOperation<V> op = pair.getValue();
-                if(op.isDone()){
+            Set<K> keys = activeAsyncOperations.keySet();
+            for(K key : keys){
+                AsyncOperation<V> op = activeAsyncOperations.get(key);
+                if(op!=null && op.isDone()){
                     op.dispatch(); // this will remove is from activeAsyncOperations
                 }
-            });
+            }
         }
     }
 
@@ -51,8 +53,8 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public AsyncOperation<V> getAsync(K key){
         // first see if there are any active asyncoperations for the same key
-        if(activeAsyncOperations != null && activeAsyncOperations.hasKey(key))
-            return activeAsyncOperations.getForKey(key);
+        if(activeAsyncOperations != null && activeAsyncOperations.containsKey(key))
+            return activeAsyncOperations.get(key);
 
         AsyncOperation<V> op;
         // if we're using a map collection as "backend", it will provide the AsyncOperations
@@ -68,13 +70,13 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         // you get an infinite recursive loop, so create activeAsyncOperations map here
         // if necessary
         if(activeAsyncOperations == null)
-            activeAsyncOperations = new MapCollection<>();
+            activeAsyncOperations = new HashMap<>();
 
-        activeAsyncOperations.setForKey(key, op);
+        activeAsyncOperations.put(key, op);
 
         op.doneEvent.addListener((AsyncOperation<V> doneOp) -> {
             this.asyncOperationDoneEvent.trigger(doneOp);
-            activeAsyncOperations.removeKey(key);
+            activeAsyncOperations.remove(key);
         });
 
         // CACHING; currently no caching mechanism implemented for AsyncFacade

@@ -271,18 +271,6 @@ public class Collection<T> extends CollectionBase<T> {
     return newCol;
   }
 
-  public T findFirst(Predicate<T> func){
-    beginLock();
-      for(int i=0; i<this.size(); i++){
-        T item = this.get(i);
-        if(func.test(item)){
-          endLock();
-          return item;
-        }
-      }
-    endLock();
-    return null;
-  }
   /**
    * @param func Function to execute for all current and all future items in this collection
    */

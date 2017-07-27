@@ -96,6 +96,30 @@ public class AsyncFacadeTest {
     // }
   }
 
+  @Test public void getAsync_with_null(){
+    List<AsyncOperation<Item>> ops = new ArrayList<>();
+
+    AsyncFacade<String, Item> facade = new AsyncFacade<>();
+    String exception = null;
+    try {
+      facade.getAsync(null);
+    } catch(Exception exc) {
+      exception = exc.toString();
+    }
+
+    assertEquals(exception, null);
+
+    facade.setSyncLoader((String query) -> { return null; });
+
+    try {
+      facade.getAsync(null);
+    } catch(Exception exc) {
+      exception = exc.toString();
+    }
+
+    assertEquals(exception, null);
+  }
+
   @Test public void setThreadedAsyncLoader(){
     operations = new ArrayList<AsyncOperation<Item>>();
 
