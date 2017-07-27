@@ -31,9 +31,9 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public void update(){
         if(bDispatchOnUpdate && activeAsyncOperations != null){
-            Set<K> keys = activeAsyncOperations.keySet();
-            for(K key : keys){
-                AsyncOperation<V> op = activeAsyncOperations.get(key);
+            Object[] keys = activeAsyncOperations.keySet().toArray();
+            for(int i=keys.length-1; i>=0; i--){
+                AsyncOperation<V> op = activeAsyncOperations.get(keys[i]);
                 if(op!=null && op.isDone()){
                     op.dispatch(); // this will remove is from activeAsyncOperations
                 }
