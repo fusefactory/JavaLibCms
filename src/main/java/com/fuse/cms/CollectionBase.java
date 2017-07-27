@@ -144,6 +144,9 @@ public class CollectionBase<T> extends ArrayList<T> {
 
     // process queue of modifications that build up during the lock
     for(ColMod<T> m : modQueue){
+      if(m == null)
+        continue;
+
       if(m.addItem != null)
         add(m.addItem);
       if(m.removeItem != null)
