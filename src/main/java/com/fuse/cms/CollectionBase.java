@@ -56,16 +56,12 @@ public class CollectionBase<T> extends ArrayList<T> {
   }
 
   public T remove(int idx){
-    if(isLocked()){
-      ColMod<T> m = new ColMod<T>();
-      m.removeIndex = idx;
-      modQueue.add(m);
-      return null;
-    }
+    T item = get(idx);
 
-    T result = super.remove(idx);
-    removeEvent.trigger(result);
-    return result;
+    // the instance-based remove method takes care of locking, etc.
+    if(this.remove(item))
+      return item;
+    return null;
   }
 
   public boolean remove(Object item){
