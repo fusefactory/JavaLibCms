@@ -63,8 +63,9 @@ public class CollectionBase<T> extends ArrayList<T> {
       return null;
     }
 
-    removeEvent.trigger(get(idx));
-    return super.remove(idx);
+    T result = super.remove(idx);
+    removeEvent.trigger(result);
+    return result;
   }
 
   public boolean remove(Object item){
@@ -75,8 +76,11 @@ public class CollectionBase<T> extends ArrayList<T> {
       return false;
     }
 
-    removeEvent.trigger((T)item);
-    return super.remove(item);
+    boolean result = super.remove(item);
+    if(result)
+      removeEvent.trigger((T)item);
+
+    return result;
   }
 
   public void clear(){
@@ -128,11 +132,15 @@ public class CollectionBase<T> extends ArrayList<T> {
   }
 
   protected void beginLock(){
-    lockCount++;
+    lockCount += 1;
+    if(lockCount < 1)
+      lockCount = 1;
   }
 
   protected void endLock(){
-    lockCount--;
+    lockCount -= 1;
+    if(lockCount < 0)
+      lockCount = 0;
 
     // still locked (this was a nested lock)? nothing more to do
     if(isLocked())
