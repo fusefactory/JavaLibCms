@@ -13,11 +13,11 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
     // attributes
 
-    private boolean bAddAsyncLoadedResultsToCollection;
-    private boolean bDispatchOnUpdate;
-    private Function<K, V> syncLoader;
-    private BiConsumer<K, AsyncOperation<V>> asyncLoader;
-    private MapCollection<K, AsyncOperation<V>> activeAsyncOperations;
+    private boolean bAddAsyncLoadedResultsToCollection = true;
+    private boolean bDispatchOnUpdate = false;
+    private Function<K, V> syncLoader = null;
+    private BiConsumer<K, AsyncOperation<V>> asyncLoader = null;
+    private MapCollection<K, AsyncOperation<V>> activeAsyncOperations = null;
 
     // events
 
@@ -26,12 +26,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     // methods
 
     public MapCollection(){
-        syncLoader = null;
-        asyncLoader = null;
         asyncOperationDoneEvent = new Event<>();
-        bAddAsyncLoadedResultsToCollection = true;
-        bDispatchOnUpdate = false;
-        activeAsyncOperations = null;
     }
 
     public void update(){
@@ -108,6 +103,13 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         activeAsyncOperations.setForKey(key, op);
 
         op.doneEvent.addListener((AsyncOperation<V> doneOp) -> {
+
+            if(this.bAddAsyncLoadedResultsToCollection){
+                for(V item : op.result){
+                    this.setForKey(key, item);
+                }
+            }
+
             this.asyncOperationDoneEvent.trigger(doneOp);
             activeAsyncOperations.removeKey(key);
         });
@@ -121,13 +123,6 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
         if(op.isDone())
             return op;
-
-        {   // copy all items added to the operation's result collection to our collection
-            op.result.addEvent.addListener((V newItem) -> {
-                if(this.bAddAsyncLoadedResultsToCollection)
-                    this.setForKey(key, newItem);
-            });
-        }
 
         if(this.asyncLoader != null){
             this.asyncLoader.accept(key, op);

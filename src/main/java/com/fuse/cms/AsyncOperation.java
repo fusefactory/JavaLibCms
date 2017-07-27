@@ -1,5 +1,7 @@
 package com.fuse.cms;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.function.Consumer;
 import com.fuse.utils.Event;
 
@@ -8,10 +10,10 @@ public class AsyncOperation<ItemType> {
     private boolean bDispatched, bDone, bSuccess, bExecuted;
 
     public Event<AsyncOperation<ItemType>> doneEvent, successEvent, failureEvent, abortEvent, executedEvent, noResultEvent;
-    public Event<Collection<ItemType>> resultEvent;
+    public Event<List<ItemType>> resultEvent;
     public Event<ItemType> singleResultEvent;
 
-    public Collection<ItemType> result;
+    public List<ItemType> result;
 
     public AsyncOperation(){
         bDispatched = false;
@@ -26,7 +28,7 @@ public class AsyncOperation<ItemType> {
         noResultEvent = new Event<>();
         resultEvent = new Event<>();
         singleResultEvent = new Event<>();
-        result = new Collection<>();
+        result = new ArrayList<>();
         bInstantDispatch = true;
     }
 
@@ -47,7 +49,7 @@ public class AsyncOperation<ItemType> {
         abortEvent.addListener(func); if(bDispatched && isAborted()) func.accept(this); return this; }
     public AsyncOperation<ItemType> whenExecuted(Consumer<AsyncOperation<ItemType>> func){
         executedEvent.addListener(func); if(bDispatched && isExecuted()) func.accept(this); return this; }
-    public AsyncOperation<ItemType> withResult(Consumer<Collection<ItemType>> func){
+    public AsyncOperation<ItemType> withResult(Consumer<List<ItemType>> func){
         resultEvent.addListener(func); if(bDispatched && isDone()) func.accept(this.result); return this; }
     public AsyncOperation<ItemType> whenNoResult(Consumer<AsyncOperation<ItemType>> func){
         noResultEvent.addListener(func); if(isNoResult()) func.accept(this); return this; }
