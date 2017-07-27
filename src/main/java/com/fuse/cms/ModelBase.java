@@ -32,14 +32,16 @@ public class ModelBase {
   public Event<AttributeChangeArgs> attributeChangeEvent;
   public Event<ModelBase> changeEvent;
 
-  // virtual methods
-  protected void onAttributesSet(String attr, String val){}
-  protected void onAttributesChange(String attr, String val){}
-
   public ModelBase(){
     attributes = new HashMap<String, String>();
     changeEvent = new Event<ModelBase>();
     attributeChangeEvent = new Event<AttributeChangeArgs>();
+  }
+
+  public void destroy(){
+    changeEvent.destroy();
+    attributeChangeEvent.destroy();
+    attributes.clear();
   }
 
   public boolean has(String attr){
@@ -57,7 +59,6 @@ public class ModelBase {
 
   /**
    * Changes the value of the specified attribute to the specified value.
-   * * Invokes onAttributesSet virtual method
    * * Triggers changeEvent if the attribute value was changed.
    * * Triggers attributeChangeEvent if the attribute value was changed.
    * Trigger
@@ -77,10 +78,8 @@ public class ModelBase {
 
     String existing = attributes.get(attr);
     attributes.put(attr,  val);
-    onAttributesSet(attr, val);
 
     if(existing == null || !existing.equals(val)){
-      onAttributesChange(attr, val);
       changeEvent.trigger(this);
 
       AttributeChangeArgs args = new AttributeChangeArgs();

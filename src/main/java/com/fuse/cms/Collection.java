@@ -203,9 +203,8 @@ public class Collection<T> extends CollectionBase<T> {
     return false;
   }
 
-  public Collection(){
-    collectionTransformers = new ArrayList<>();
-  }
+  // public Collection(){
+  // }
 
   /**
    * The accept method creates a filter that only lets items into our
@@ -319,15 +318,23 @@ public class Collection<T> extends CollectionBase<T> {
     Collection<U> target = new Collection<U>();
     CollectionTransformer<T, U> transformer = new CollectionTransformer(this, target, func);
     transformer.owner = owner;
+    if(collectionTransformers == null)
+      collectionTransformers = new ArrayList<>();
     collectionTransformers.add(transformer);
     return target;
   }
 
   public void stopTransforms(Object owner){
+    if(collectionTransformers == null)
+      return;
+
     for(CollectionTransformerBase trans : collectionTransformers){
       if(trans.owner == owner){
         trans.stop();
       }
     }
+
+    if(collectionTransformers.isEmpty())
+      collectionTransformers = null;
   }
 }

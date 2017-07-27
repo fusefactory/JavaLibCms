@@ -155,27 +155,33 @@ class ModelJsonParser {
 }
 
 public class Model extends ModelBase {
-  private List<AttributeTransformer> attributeTransformers;
-  private List<ModelTransformer> modelTransformers;
-  private List<ModelFollower> modelFollowers;
+  private List<AttributeTransformer> attributeTransformers = null;
+  private List<ModelTransformer> modelTransformers = null;
+  private List<ModelFollower> modelFollowers = null;
 
-  public Model(){
-    attributeTransformers = new ArrayList<AttributeTransformer>();
-    modelTransformers = new ArrayList<ModelTransformer>();
-  }
+  // public Model(){
+  // }
 
   public void destroy(){
-    for(AttributeTransformer t : attributeTransformers)
-      t.destroy();
-    attributeTransformers = null;
+    if(attributeTransformers!=null){
+      for(AttributeTransformer t : attributeTransformers)
+        t.destroy();
+      attributeTransformers = null;
+    }
 
-    for(ModelTransformer t : modelTransformers)
-      t.destroy();
-    modelTransformers = null;
+    if(modelTransformers != null){
+      for(ModelTransformer t : modelTransformers)
+        t.destroy();
+      modelTransformers = null;
+    }
 
-    for(ModelFollower f : modelFollowers)
-      f.destroy();
-    modelFollowers = null;
+    if(modelFollowers != null){
+      for(ModelFollower f : modelFollowers)
+        f.destroy();
+      modelFollowers = null;
+    }
+
+    super.destroy();
   }
 
   public AttributeTransformer transformAttribute(String attr, Consumer<String> func){
@@ -183,12 +189,18 @@ public class Model extends ModelBase {
   }
 
   public AttributeTransformer transformAttribute(String attr, Consumer<String> func, Object owner){
+    if(attributeTransformers == null)
+      attributeTransformers = new ArrayList<AttributeTransformer>();
+
     AttributeTransformer t = new AttributeTransformer(this, attr, func, owner);
     attributeTransformers.add(t);
     return t;
   }
 
   public void stopTransformAttribute(Object owner){
+    if(attributeTransformers == null)
+      return;
+
     Iterator it = attributeTransformers.iterator();
     while(it.hasNext()){
       AttributeTransformer t = (AttributeTransformer)it.next();
@@ -206,12 +218,18 @@ public class Model extends ModelBase {
   }
 
   public ModelTransformer transform(Consumer<ModelBase> func, Object owner){
+    if(modelTransformers == null)
+      modelTransformers = new ArrayList<ModelTransformer>();
+
     ModelTransformer t = new ModelTransformer(this, func, owner);
     modelTransformers.add(t);
     return t;
   }
 
   public void stopTransform(Object owner){
+    if(modelTransformers == null)
+      return;
+
     Iterator it = modelTransformers.iterator();
     while(it.hasNext()){
       ModelTransformer t = (ModelTransformer)it.next();

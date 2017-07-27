@@ -23,26 +23,35 @@ class ColMod<T> {
 }
 
 public class CollectionBase<T> extends ArrayList<T> {
-  private int lockCount;
-  private List<ColMod<T>> modQueue;
+  private int lockCount = 0;
+  private List<ColMod<T>> modQueue = null;
   /** null by default but can be set by caller using setInstantiator to be able to use the create method */
-  private Supplier<T> instantiatorFunc;
+  private Supplier<T> instantiatorFunc = null;
+
   public Event<T> addEvent;
   public Event<T> removeEvent;
   public Test<T> beforeAddTest;
 
   public CollectionBase(){
-    lockCount = 0;
-    modQueue = new ArrayList<ColMod<T>>();
     addEvent = new Event<T>();
     removeEvent = new Event<T>();
     beforeAddTest = new Test<T>();
+  }
+
+  public void destroy(){
+    addEvent.destroy();
+    removeEvent.destroy();
+    beforeAddTest = new Test<T>();
+    instantiatorFunc = null;
+    modQueue = null;
   }
 
   public boolean add(T item){
     if(isLocked()){
       ColMod<T> m = new ColMod<T>();
       m.addItem = item;
+      if(modQueue == null)
+        modQueue = new ArrayList<>();
       modQueue.add(m);
       return false;
     }
@@ -68,6 +77,8 @@ public class CollectionBase<T> extends ArrayList<T> {
     if(isLocked()){
       ColMod<T> m = new ColMod<T>();
       m.removeItem = item;
+      if(modQueue == null)
+        modQueue = new ArrayList<>();
       modQueue.add(m);
       return false;
     }
@@ -83,6 +94,8 @@ public class CollectionBase<T> extends ArrayList<T> {
     if(isLocked()){
       ColMod<T> m = new ColMod<T>();
       m.clear = true;
+      if(modQueue == null)
+        modQueue = new ArrayList<>();
       modQueue.add(m);
       return;
     }
@@ -143,6 +156,9 @@ public class CollectionBase<T> extends ArrayList<T> {
       return;
 
     // process queue of modifications that build up during the lock
+    if(modQueue == null)
+      return;
+
     for(ColMod<T> m : modQueue){
       if(m == null)
         continue;
@@ -158,6 +174,7 @@ public class CollectionBase<T> extends ArrayList<T> {
     }
 
     modQueue.clear();
+    modQueue = null;
   }
 
   public void add(int index, T element){
