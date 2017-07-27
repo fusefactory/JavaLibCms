@@ -23,6 +23,14 @@ class AttributeTransformer {
       func.accept(model.get(attr));
   };
 
+  public void destroy(){
+    stop();
+    model = null;
+    attr = null;
+    func = null;
+    owner = null;
+  }
+
   public void start(){
     model.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs args) -> {
       if(args.attr.equals(attr))
@@ -52,6 +60,13 @@ class ModelTransformer {
     func.accept(model);
   };
 
+  public void destroy(){
+    stop();
+    model = null;
+    func = null;
+    owner = null;
+  }
+
   public void start(){
     model.changeEvent.addListener((ModelBase m) -> {
       this.func.accept(m);
@@ -78,6 +93,13 @@ class ModelFollower {
     start();
   }
 
+  public void destroy(){
+    stop();
+    source = null;
+    target = null;
+    owner = null;
+  }
+
   public void start(){
     this.source.each((String key, String val) -> {
       this.target.set(key, val);
@@ -101,6 +123,11 @@ class ModelJsonParser {
   private ModelBase model;
   private String jsonContent;
   private JSONObject jsonObject;
+
+  public void destroy(){
+    model = null;
+    jsonContent = null;
+  }
 
   public ModelJsonParser(ModelBase model, String json){
     this.model = model;
@@ -135,6 +162,20 @@ public class Model extends ModelBase {
   public Model(){
     attributeTransformers = new ArrayList<AttributeTransformer>();
     modelTransformers = new ArrayList<ModelTransformer>();
+  }
+
+  public void destroy(){
+    for(AttributeTransformer t : attributeTransformers)
+      t.destroy();
+    attributeTransformers = null;
+
+    for(ModelTransformer t : modelTransformers)
+      t.destroy();
+    modelTransformers = null;
+
+    for(ModelFollower f : modelFollowers)
+      f.destroy();
+    modelFollowers = null;
   }
 
   public AttributeTransformer transformAttribute(String attr, Consumer<String> func){

@@ -26,8 +26,8 @@ public class ModelBase {
   }
 
   private Map<String, String> attributes;
-  private int lockCount;
-  private List<Mod> modQueue;
+  private int lockCount = 0;
+  private List<Mod> modQueue = null;
 
   public Event<AttributeChangeArgs> attributeChangeEvent;
   public Event<ModelBase> changeEvent;
@@ -38,9 +38,6 @@ public class ModelBase {
 
   public ModelBase(){
     attributes = new HashMap<String, String>();
-    lockCount = 0;
-    modQueue = new ArrayList<Mod>();
-
     changeEvent = new Event<ModelBase>();
     attributeChangeEvent = new Event<AttributeChangeArgs>();
   }
@@ -72,6 +69,8 @@ public class ModelBase {
       Mod mod = new Mod();
       mod.setAttr = attr;
       mod.setValue = val;
+      if(modQueue == null)
+        modQueue = new ArrayList<>();
       modQueue.add(mod);
       return;
     }
@@ -113,12 +112,16 @@ public class ModelBase {
     if(isLocked())
       return;
 
-    // lock lifted; process mod queue
+    // lock lifted; process mod queue if there is one
+    if(modQueue == null)
+      return;
+
     for(Mod mod : modQueue){
       set(mod.setAttr, mod.setValue);
     }
 
     modQueue.clear();
+    modQueue = null;
   }
 
   public int size(){
