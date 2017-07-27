@@ -162,6 +162,10 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         bDispatchOnUpdate = value;
     }
 
+    public boolean getDispatchOnUpdate(){
+        return bDispatchOnUpdate;
+    }
+
     public void use(MapCollection map){
         usedMapCollection = map;
     }
