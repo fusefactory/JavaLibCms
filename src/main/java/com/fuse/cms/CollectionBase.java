@@ -208,20 +208,17 @@ public class CollectionBase<T> extends ArrayList<T> {
   }
 
   T findFirst(Predicate<T> predicate){
-    T resultItem = null;
-
     beginLock();
-    {
-      for(T item : this){
-        if(predicate.test(item)){
-          resultItem = item;
-          break;
-        }
-      }
-    }
+    List<T> tmpItems = new ArrayList<T>();
+    tmpItems.addAll(this);
     endLock();
 
-    return resultItem;
+    for(T item : tmpItems){
+      if(predicate.test(item))
+        return item;
+    }
+
+    return null;
   }
 
   /**
