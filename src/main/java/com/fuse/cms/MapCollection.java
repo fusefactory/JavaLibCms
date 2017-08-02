@@ -50,7 +50,12 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
     public V getForKey(K key, boolean useSyncLoader){
         Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
-            return compareKeys(key, entry.getKey());
+          if(entry == null){
+            System.out.println("encountered null entry in MapCollection");
+            return false;
+          }
+
+          return compareKeys(key, entry.getKey());
         });
 
         if(foundEntry != null)
