@@ -13,11 +13,11 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
     // attributes
 
-    private boolean bAddAsyncLoadedResultsToCollection;
-    private boolean bDispatchOnUpdate;
-    private Function<K, V> syncLoader;
-    private BiConsumer<K, AsyncOperation<V>> asyncLoader;
-    private MapCollection<K, AsyncOperation<V>> activeAsyncOperations;
+    private boolean bAddAsyncLoadedResultsToCollection = true;
+    private boolean bDispatchOnUpdate = false;
+    private Function<K, V> syncLoader = null;
+    private BiConsumer<K, AsyncOperation<V>> asyncLoader = null;
+    private MapCollection<K, AsyncOperation<V>> activeAsyncOperations = null;
 
     // events
 
@@ -26,12 +26,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
     // methods
 
     public MapCollection(){
-        syncLoader = null;
-        asyncLoader = null;
         asyncOperationDoneEvent = new Event<>();
-        bAddAsyncLoadedResultsToCollection = true;
-        bDispatchOnUpdate = false;
-        activeAsyncOperations = null;
     }
 
     public void update(){
@@ -55,7 +50,12 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
     public V getForKey(K key, boolean useSyncLoader){
         Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
-            return compareKeys(key, entry.getKey());
+          if(entry == null){
+            System.out.println("encountered null entry in MapCollection");
+            return false;
+          }
+
+          return compareKeys(key, entry.getKey());
         });
 
         if(foundEntry != null)
@@ -81,6 +81,15 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
             this.remove(foundEntry);
     }
 
+    public void removeValue(V value){
+        Map.Entry<K, V> foundEntry = findFirst((Map.Entry<K, V> entry) -> {
+            return compareValues(value, entry.getValue());
+        });
+
+        if(foundEntry != null)
+            this.remove(foundEntry);
+    }
+
     public AsyncOperation<V> getAsync(K key){
         if(activeAsyncOperations != null && activeAsyncOperations.hasKey(key))
             return activeAsyncOperations.getForKey(key);
@@ -99,6 +108,13 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         activeAsyncOperations.setForKey(key, op);
 
         op.doneEvent.addListener((AsyncOperation<V> doneOp) -> {
+
+            if(this.bAddAsyncLoadedResultsToCollection){
+                for(V item : op.result){
+                    this.setForKey(key, item);
+                }
+            }
+
             this.asyncOperationDoneEvent.trigger(doneOp);
             activeAsyncOperations.removeKey(key);
         });
@@ -112,13 +128,6 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
         if(op.isDone())
             return op;
-
-        {   // copy all items added to the operation's result collection to our collection
-            op.result.addEvent.addListener((V newItem) -> {
-                if(this.bAddAsyncLoadedResultsToCollection)
-                    this.setForKey(key, newItem);
-            });
-        }
 
         if(this.asyncLoader != null){
             this.asyncLoader.accept(key, op);
@@ -187,13 +196,18 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
         };
     }
 
-    public boolean compareKeys(K keyA, K keyB){
+    private boolean compareKeys(K keyA, K keyB){
         // check for any custom registered compare filterFuncs
         return defaultKeyComparator(keyA, keyB);
     }
 
     public boolean defaultKeyComparator(K keyA, K keyB){
+        if(keyA == null || keyB == null) return false;
         return keyA.equals(keyB);
+    }
+
+    private boolean compareValues(V a, V b){
+        return a.equals(b);
     }
 
     public void setAddAsyncLoadedResultsToCollection(boolean newValue){

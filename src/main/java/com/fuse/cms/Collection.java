@@ -112,7 +112,6 @@ class CollectionSyncer<T> {
   }
 }
 
-
 class CollectionTransformerBase {
   public Object owner;
 
@@ -192,6 +191,7 @@ class CollectionTransformer<S,T> extends CollectionTransformerBase {
   }
 }
 
+
 public class Collection<T> extends CollectionBase<T> {
 
   private CollectionFilter<T> colFilter;
@@ -203,9 +203,8 @@ public class Collection<T> extends CollectionBase<T> {
     return false;
   }
 
-  public Collection(){
-    collectionTransformers = new ArrayList<>();
-  }
+  // public Collection(){
+  // }
 
   /**
    * The accept method creates a filter that only lets items into our
@@ -255,11 +254,19 @@ public class Collection<T> extends CollectionBase<T> {
     return colSyncer;
   }
 
-  /// create new collection instance which syncs from this but registers the given filter
+  /** create new collection instance which syncs from this but registers the given filter */
   public Collection<T> filtered(Predicate<T> func){
+    return filtered(func, true);
+  }
+
+  /** create new collection instance which applies the given filter and copies
+   * the content of this collection. If the active param is true, it will also
+   * register listeners to stay synced with this collection.
+   */
+  public Collection<T> filtered(Predicate<T> func, boolean active){
     Collection<T> newCol = new Collection<T>();
     newCol.accept(func);
-    newCol.sync(this);
+    newCol.sync(this, active);
     return newCol;
   }
 
@@ -311,15 +318,23 @@ public class Collection<T> extends CollectionBase<T> {
     Collection<U> target = new Collection<U>();
     CollectionTransformer<T, U> transformer = new CollectionTransformer(this, target, func);
     transformer.owner = owner;
+    if(collectionTransformers == null)
+      collectionTransformers = new ArrayList<>();
     collectionTransformers.add(transformer);
     return target;
   }
 
   public void stopTransforms(Object owner){
+    if(collectionTransformers == null)
+      return;
+
     for(CollectionTransformerBase trans : collectionTransformers){
       if(trans.owner == owner){
         trans.stop();
       }
     }
+
+    if(collectionTransformers.isEmpty())
+      collectionTransformers = null;
   }
 }

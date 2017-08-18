@@ -22,26 +22,26 @@ public class ModelBase {
     public ModelBase model;
     public String attr;
     public String value;
+    public String previousValue;
   }
 
   private Map<String, String> attributes;
-  private int lockCount;
-  private List<Mod> modQueue;
+  private int lockCount = 0;
+  private List<Mod> modQueue = null;
 
   public Event<AttributeChangeArgs> attributeChangeEvent;
   public Event<ModelBase> changeEvent;
 
-  // virtual methods
-  protected void onAttributesSet(String attr, String val){}
-  protected void onAttributesChange(String attr, String val){}
-
   public ModelBase(){
     attributes = new HashMap<String, String>();
-    lockCount = 0;
-    modQueue = new ArrayList<Mod>();
-
     changeEvent = new Event<ModelBase>();
     attributeChangeEvent = new Event<AttributeChangeArgs>();
+  }
+
+  public void destroy(){
+    changeEvent.destroy();
+    attributeChangeEvent.destroy();
+    attributes.clear();
   }
 
   public boolean has(String attr){
@@ -59,7 +59,6 @@ public class ModelBase {
 
   /**
    * Changes the value of the specified attribute to the specified value.
-   * * Invokes onAttributesSet virtual method
    * * Triggers changeEvent if the attribute value was changed.
    * * Triggers attributeChangeEvent if the attribute value was changed.
    * Trigger
@@ -71,22 +70,23 @@ public class ModelBase {
       Mod mod = new Mod();
       mod.setAttr = attr;
       mod.setValue = val;
+      if(modQueue == null)
+        modQueue = new ArrayList<>();
       modQueue.add(mod);
       return;
     }
 
     String existing = attributes.get(attr);
     attributes.put(attr,  val);
-    onAttributesSet(attr, val);
 
     if(existing == null || !existing.equals(val)){
-      onAttributesChange(attr, val);
       changeEvent.trigger(this);
 
       AttributeChangeArgs args = new AttributeChangeArgs();
       args.model = this;
       args.attr = attr;
       args.value = val;
+      args.previousValue = existing;
       attributeChangeEvent.trigger(args);
     }
   }
@@ -111,12 +111,16 @@ public class ModelBase {
     if(isLocked())
       return;
 
-    // lock lifted; process mod queue
+    // lock lifted; process mod queue if there is one
+    if(modQueue == null)
+      return;
+
     for(Mod mod : modQueue){
       set(mod.setAttr, mod.setValue);
     }
 
     modQueue.clear();
+    modQueue = null;
   }
 
   public int size(){
@@ -162,13 +166,19 @@ public class ModelBase {
     return defaultValue;
   }
 
-  /**
-   * Converts value to a string and sets attribute using default set method.
-   * @param attr Attribute to give a numeric value
-   * @param value Number to convert to string
-   */
-  public void set(String attr, int value){
-    set(attr, Integer.toString(value));
+  public long getLong(String attr){
+    return getLong(attr, 0l);
+  }
+
+  public long getLong(String attr, long defaultValue){
+    String str = this.get(attr);
+    if(str == null) return defaultValue;
+
+    try {
+      return Long.parseLong(str);
+    } catch (java.lang.NumberFormatException exc){
+    }
+    return defaultValue;
   }
 
   public float getFloat(String attr){
@@ -187,6 +197,23 @@ public class ModelBase {
 
   public void set(String attr, float value){
     set(attr, Float.toString(value));
+  }
+
+  /**
+   * Converts value to a string and sets attribute using default set method.
+   * @param attr Attribute to give a numeric value
+   * @param value Number to convert to string
+   */
+  public void set(String attr, int value){
+    set(attr, Integer.toString(value));
+  }
+
+  public void set(String attr, long value){
+    set(attr, Long.toString(value));
+  }
+
+  public void set(String attr, boolean value){
+    set(attr, Boolean.toString(value));
   }
 
   public float[] getVec3(String attr){

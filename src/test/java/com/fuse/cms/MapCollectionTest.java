@@ -319,4 +319,15 @@ public class MapCollectionTest {
     assertEquals(strings.get(0), "10");
     assertEquals(items.size(), 3);
   }
+
+  @Test public void removeValue(){
+    MapCollection<Integer, Item> col = new MapCollection<>();
+    col.setForKey(2, new Item(2));
+    col.setForKey(5, new Item(5));
+    assertEquals(col.size(), 2);
+    col.removeValue(col.getForKey(5));
+    assertEquals(col.size(), 1);
+    assertEquals(col.hasKey(5), false);
+    assertEquals(col.hasKey(2), true);
+  }
 }
