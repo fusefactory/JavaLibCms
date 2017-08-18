@@ -63,7 +63,7 @@ public class ModelBase {
    * * Triggers attributeChangeEvent if the attribute value was changed.
    * Trigger
    * @param attr The name/key of the attribute
-   * @param value The new value
+   * @param val The new value
    */
   public void set(String attr, String val){
     if(isLocked()){
@@ -137,7 +137,9 @@ public class ModelBase {
     });
   }
 
-  /** Simply use the id attribute as id */
+  /** Simply use the id attribute as id
+   * @return The value of the "id" attribute (defaults to an empty string: "")
+   */
   public String getId(){
     return get("id", "");
   }

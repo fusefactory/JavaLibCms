@@ -254,7 +254,10 @@ public class Collection<T> extends CollectionBase<T> {
     return colSyncer;
   }
 
-  /** create new collection instance which syncs from this but registers the given filter */
+  /** create new collection instance which syncs from this but registers the given filter
+   * @param func Predicate function that provides the filter-logic
+   * @return Collection A new Collection instance with this Collection's filtered content
+   */
   public Collection<T> filtered(Predicate<T> func){
     return filtered(func, true);
   }
@@ -262,6 +265,9 @@ public class Collection<T> extends CollectionBase<T> {
   /** create new collection instance which applies the given filter and copies
    * the content of this collection. If the active param is true, it will also
    * register listeners to stay synced with this collection.
+   * @param func Predicate function that provides the filter-logic
+   * @param active when true, it will also filter newly added items in the future
+   * @return Collection A new Collection instance with this Collection's filtered content
    */
   public Collection<T> filtered(Predicate<T> func, boolean active){
     Collection<T> newCol = new Collection<T>();
@@ -291,6 +297,7 @@ public class Collection<T> extends CollectionBase<T> {
   /**
    * Convenience method for readability (a call to stopWithAll looks more related)
    * to a previous withAll call than add call to .addEvent.removeListeners
+   * @param owner The owner who's listeners we want to remove
    */
   public void stopWithAll(Object owner){
     System.out.println("Collection.stopWithAll is DEPRECATED, call addEvent.removeListeners directly.");
