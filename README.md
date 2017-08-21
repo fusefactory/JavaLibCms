@@ -32,7 +32,7 @@ Runtime Dependencies are:
 
 
 
-## USAGE: Model attribute transformers for creating a link between a single data value and
+## USAGE: Model attribute transformers for creating a link between a single data value and a view object
 
 In the example below, a model instance functions as data-source for the some custom documentView object. The transformAttribute method immediately runs the given lambda with the current value of the "title" attribute (only if there is one) and also runs the lambda for every new value when the attribute is updated in the future (until the transformer is remove). This essentially creates a link between the data source and the
 
@@ -55,29 +55,35 @@ model.set("title", "Updated Title");
 // the documentView object is automatically updated with the "Updated Title" text
 ```
 
-## Usage: Model transformers
+## USAGE: Model transformers for creating a link between a data model instance (multiple key/value pairs) and a view object
+
+In the example below a model instance is used to populate a view object. A single model "transformer" is registered, which will be invoked immediately when the transformer is registered, as well as every time an attribute in that model is updated.
+
+Note that though int- and float-based values are being used, all data inside Models is String-based. The get* and set methods of the Model can convert most native types from/into strings.
 
 ```java
 import com.fuse.cms.Model;
 
-// Create a model with some attributes
-Model model = new Model();
-model.set("name", "Bobby");
-model.set("age", "13");
+// Create a model with an int-based age attribute and a float-based price attribute
 
-// register a model transformer;
-// the transformer is called for the current model state,
-// and every time the model is updated
+Model model = new Model();
+model.set("price", 9.99);
+model.set("age", 13);
+
 model.transform((ModelBase m) -> {
     int age = m.getInt("age");
 
+    // use age attribute to set the right target audience tagline
     if(age < 10){
-        System.out.println("Kid: " + m.get("name"));
+        someViewObject.textTagline("for Kid!");
     } else if(age < 20){
-        System.out.println("Teen: " + m.get("name"));
+        someViewObject.textTagline("for Teens!");
     } else {
-        System.out.println("Grownup: " + m.get("name"));
+        someViewObject.textTagline("for Grownups!");
     }
+
+    // use price attribute to set the price on our view object
+    someViewObject.setPrice(m.getFloat("price"));
 }); // outputs: "Teen: Bobby"
 
 model.set("name", "bob"); // outputs: "Teen: bob"
