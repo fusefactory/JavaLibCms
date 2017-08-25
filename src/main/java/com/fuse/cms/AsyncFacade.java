@@ -16,7 +16,6 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
     private Map<K, AsyncOperation<V>> activeAsyncOperations;
-    private MapCollection<K, V> usedMapCollection; //TODO REMOVE
     private Integer threadPriority = null;
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
@@ -26,7 +25,6 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         asyncOperationDoneEvent = new Event<>();
         bDispatchOnUpdate = false;
         activeAsyncOperations = null;
-        usedMapCollection = null;
     }
 
     public void update(){
@@ -42,10 +40,6 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     }
 
     public V getSync(K key){
-        if(usedMapCollection != null){
-            return usedMapCollection.getForKey(key);
-        }
-
         if(syncLoader == null)
             return null;
         return syncLoader.apply(key);
@@ -57,13 +51,8 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
             return activeAsyncOperations.get(key);
 
         AsyncOperation<V> op;
-        // if we're using a map collection as "backend", it will provide the AsyncOperations
-        if(usedMapCollection != null){
-            op = usedMapCollection.getAsync(key);
-        } else {
-            op = new AsyncOperation<V>();
-            op.setInstantDispatch(!bDispatchOnUpdate);
-        }
+        op = new AsyncOperation<V>();
+        op.setInstantDispatch(!bDispatchOnUpdate);
 
         // could not initialize in constructor, because
         // if a MapCollection initializes another MapCollection in its contstructor
@@ -87,11 +76,6 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         // }
         // if(op.isDone())
         //     return op;
-
-        // the map collection will perform logic of completing the operation
-        if(usedMapCollection != null){
-            return op;
-        }
 
         if(this.asyncLoader != null){
             this.asyncLoader.accept(key, op);
@@ -167,11 +151,6 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public boolean getDispatchOnUpdate(){
         return bDispatchOnUpdate;
-    }
-
-    //TODO REMOVE
-    public void use(MapCollection map){
-        usedMapCollection = map;
     }
 
     public void setThreadPriority(Integer newPrio){
