@@ -23,26 +23,35 @@ class ColMod<T> {
 }
 
 public class CollectionBase<T> extends ArrayList<T> {
-  private int lockCount;
-  private List<ColMod<T>> modQueue;
+  private int lockCount = 0;
+  private List<ColMod<T>> modQueue = null;
   /** null by default but can be set by caller using setInstantiator to be able to use the create method */
-  private Supplier<T> instantiatorFunc;
+  private Supplier<T> instantiatorFunc = null;
+
   public Event<T> addEvent;
   public Event<T> removeEvent;
   public Test<T> beforeAddTest;
 
   public CollectionBase(){
-    lockCount = 0;
-    modQueue = new ArrayList<ColMod<T>>();
     addEvent = new Event<T>();
     removeEvent = new Event<T>();
     beforeAddTest = new Test<T>();
+  }
+
+  public void destroy(){
+    addEvent.destroy();
+    removeEvent.destroy();
+    beforeAddTest = new Test<T>();
+    instantiatorFunc = null;
+    modQueue = null;
   }
 
   public boolean add(T item){
     if(isLocked()){
       ColMod<T> m = new ColMod<T>();
       m.addItem = item;
+      if(modQueue == null)
+        modQueue = new ArrayList<>();
       modQueue.add(m);
       return false;
     }
@@ -56,33 +65,37 @@ public class CollectionBase<T> extends ArrayList<T> {
   }
 
   public T remove(int idx){
-    if(isLocked()){
-      ColMod<T> m = new ColMod<T>();
-      m.removeIndex = idx;
-      modQueue.add(m);
-      return null;
-    }
+    T item = get(idx);
 
-    removeEvent.trigger(get(idx));
-    return super.remove(idx);
+    // the instance-based remove method takes care of locking, etc.
+    if(this.remove(item))
+      return item;
+    return null;
   }
 
   public boolean remove(Object item){
     if(isLocked()){
       ColMod<T> m = new ColMod<T>();
       m.removeItem = item;
+      if(modQueue == null)
+        modQueue = new ArrayList<>();
       modQueue.add(m);
       return false;
     }
 
-    removeEvent.trigger((T)item);
-    return super.remove(item);
+    boolean result = super.remove(item);
+    if(result)
+      removeEvent.trigger((T)item);
+
+    return result;
   }
 
   public void clear(){
     if(isLocked()){
       ColMod<T> m = new ColMod<T>();
       m.clear = true;
+      if(modQueue == null)
+        modQueue = new ArrayList<>();
       modQueue.add(m);
       return;
     }
@@ -97,9 +110,8 @@ public class CollectionBase<T> extends ArrayList<T> {
     // (like add() add remove()) without causing errors; the modification will
     // be queued and processed after we finished iterating and list is unlocked
     lock(() -> {
-      Iterator it = iterator();
-      while(it.hasNext()){
-        T item = (T)it.next();
+      for(int idx=0; idx<this.size(); idx++){
+        T item = this.get(idx);
         func.accept(item);
       }
     });
@@ -111,12 +123,9 @@ public class CollectionBase<T> extends ArrayList<T> {
     // (like add() add remove()) without causing errors; the modification will
     // be queued and processed after we finished iterating and list is unlocked
     lock(() -> {
-      Iterator it = iterator();
-      int idx=0;
-      while(it.hasNext()){
-        T item = (T)it.next();
+      for(int idx=0; idx<this.size(); idx++){
+        T item = this.get(idx);
         func.accept(item, idx);
-        idx += 1;
       }
     });
   }
@@ -125,25 +134,35 @@ public class CollectionBase<T> extends ArrayList<T> {
     return lockCount > 0;
   }
 
-  private void lock(Runnable func){
+  protected void lock(Runnable func){
     beginLock();
       func.run();
     endLock();
   }
 
-  private void beginLock(){
-    lockCount++;
+  protected void beginLock(){
+    lockCount += 1;
+    if(lockCount < 1)
+      lockCount = 1;
   }
 
-  private void endLock(){
-    lockCount--;
+  protected void endLock(){
+    lockCount -= 1;
+    if(lockCount < 0)
+      lockCount = 0;
 
     // still locked (this was a nested lock)? nothing more to do
     if(isLocked())
       return;
 
     // process queue of modifications that build up during the lock
+    if(modQueue == null)
+      return;
+
     for(ColMod<T> m : modQueue){
+      if(m == null)
+        continue;
+
       if(m.addItem != null)
         add(m.addItem);
       if(m.removeItem != null)
@@ -155,6 +174,7 @@ public class CollectionBase<T> extends ArrayList<T> {
     }
 
     modQueue.clear();
+    modQueue = null;
   }
 
   public void add(int index, T element){
@@ -188,20 +208,17 @@ public class CollectionBase<T> extends ArrayList<T> {
   }
 
   T findFirst(Predicate<T> predicate){
-    T resultItem = null;
-
     beginLock();
-    {
-      for(T item : this){
-        if(predicate.test(item)){
-          resultItem = item;
-          break;
-        }
-      }
-    }
+    List<T> tmpItems = new ArrayList<T>();
+    tmpItems.addAll(this);
     endLock();
 
-    return resultItem;
+    for(T item : tmpItems){
+      if(predicate.test(item))
+        return item;
+    }
+
+    return null;
   }
 
   /**

@@ -1,9 +1,10 @@
 package com.fuse.cms;
 
+import java.util.Set;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.AbstractMap;
 import java.util.function.Function;
 import java.util.function.BiConsumer;
 
@@ -14,8 +15,9 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private boolean bDispatchOnUpdate;
     private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
-    private MapCollection<K, AsyncOperation<V>> activeAsyncOperations;
-
+    private Map<K, AsyncOperation<V>> activeAsyncOperations;
+    private MapCollection<K, V> usedMapCollection; //TODO REMOVE
+    private Integer threadPriority = null;
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
     public AsyncFacade(){
@@ -24,45 +26,57 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         asyncOperationDoneEvent = new Event<>();
         bDispatchOnUpdate = false;
         activeAsyncOperations = null;
+        usedMapCollection = null;
     }
 
     public void update(){
         if(bDispatchOnUpdate && activeAsyncOperations != null){
-            activeAsyncOperations.each((Map.Entry<K, AsyncOperation<V>> pair) -> {
-                AsyncOperation<V> op = pair.getValue();
-                if(op.isDone()){
+            Object[] keys = activeAsyncOperations.keySet().toArray();
+            for(int i=keys.length-1; i>=0; i--){
+                AsyncOperation<V> op = activeAsyncOperations.get(keys[i]);
+                if(op!=null && op.isDone()){
                     op.dispatch(); // this will remove is from activeAsyncOperations
                 }
-            });
+            }
         }
     }
 
     public V getSync(K key){
+        if(usedMapCollection != null){
+            return usedMapCollection.getForKey(key);
+        }
+
         if(syncLoader == null)
             return null;
         return syncLoader.apply(key);
     }
 
     public AsyncOperation<V> getAsync(K key){
-        if(activeAsyncOperations != null && activeAsyncOperations.hasKey(key))
-            return activeAsyncOperations.getForKey(key);
-
         // first see if there are any active asyncoperations for the same key
-        AsyncOperation<V> op = new AsyncOperation<V>();
-        op.setInstantDispatch(!bDispatchOnUpdate);
+        if(activeAsyncOperations != null && activeAsyncOperations.containsKey(key))
+            return activeAsyncOperations.get(key);
+
+        AsyncOperation<V> op;
+        // if we're using a map collection as "backend", it will provide the AsyncOperations
+        if(usedMapCollection != null){
+            op = usedMapCollection.getAsync(key);
+        } else {
+            op = new AsyncOperation<V>();
+            op.setInstantDispatch(!bDispatchOnUpdate);
+        }
 
         // could not initialize in constructor, because
         // if a MapCollection initializes another MapCollection in its contstructor
         // you get an infinite recursive loop, so create activeAsyncOperations map here
         // if necessary
         if(activeAsyncOperations == null)
-            activeAsyncOperations = new MapCollection<>();
+            activeAsyncOperations = new HashMap<>();
 
-        activeAsyncOperations.setForKey(key, op);
+        activeAsyncOperations.put(key, op);
 
         op.doneEvent.addListener((AsyncOperation<V> doneOp) -> {
             this.asyncOperationDoneEvent.trigger(doneOp);
-            activeAsyncOperations.removeKey(key);
+            activeAsyncOperations.remove(key);
         });
 
         // CACHING; currently no caching mechanism implemented for AsyncFacade
@@ -73,6 +87,11 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         // }
         // if(op.isDone())
         //     return op;
+
+        // the map collection will perform logic of completing the operation
+        if(usedMapCollection != null){
+            return op;
+        }
 
         if(this.asyncLoader != null){
             this.asyncLoader.accept(key, op);
@@ -102,6 +121,9 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
                     newLoader.accept(key, op);
                 }
             });
+
+            if(this.threadPriority != null)
+                thread.setPriority(this.threadPriority);
 
             thread.start();
         });
@@ -141,5 +163,22 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public void setDispatchOnUpdate(boolean value){
         bDispatchOnUpdate = value;
+    }
+
+    public boolean getDispatchOnUpdate(){
+        return bDispatchOnUpdate;
+    }
+
+    //TODO REMOVE
+    public void use(MapCollection map){
+        usedMapCollection = map;
+    }
+
+    public void setThreadPriority(Integer newPrio){
+        this.threadPriority = newPrio;
+    }
+
+    public Integer getThreadPriority(){
+        return this.threadPriority;
     }
 };

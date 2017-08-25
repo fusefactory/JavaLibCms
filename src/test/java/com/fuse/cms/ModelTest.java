@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.ArrayList;
 import com.fuse.cms.Model;
 
-/**
-* Unit test for com.fuse.cms.Model.
-*/
 public class ModelTest {
   /**
   * Test Logic
@@ -153,5 +150,19 @@ public class ModelTest {
     assertEquals(m.getId(), "");
     m.set("id", "1013");
     assertEquals(m.getId(), "1013");
+  }
+
+  @Test public void destroy(){
+    Model m = new Model();
+    strings = new ArrayList<>();
+    m.transformAttribute("abc", (String val) -> strings.add("1-"+val));
+    m.transform((ModelBase mb) -> strings.add("2-"+mb.get("abc")));
+    m.set("abc", "def");
+    assertEquals(joined(","), "2-null,2-def,1-def");
+    m.set("abc", "ghi");
+    assertEquals(joined(","), "2-null,2-def,1-def,2-ghi,1-ghi");
+    m.destroy();
+    m.set("abc", "jkl");
+    assertEquals(joined(","), "2-null,2-def,1-def,2-ghi,1-ghi");
   }
 }

@@ -23,6 +23,14 @@ class AttributeTransformer {
       func.accept(model.get(attr));
   };
 
+  public void destroy(){
+    stop();
+    model = null;
+    attr = null;
+    func = null;
+    owner = null;
+  }
+
   public void start(){
     model.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs args) -> {
       if(args.attr.equals(attr))
@@ -52,6 +60,13 @@ class ModelTransformer {
     func.accept(model);
   };
 
+  public void destroy(){
+    stop();
+    model = null;
+    func = null;
+    owner = null;
+  }
+
   public void start(){
     model.changeEvent.addListener((ModelBase m) -> {
       this.func.accept(m);
@@ -78,6 +93,13 @@ class ModelFollower {
     start();
   }
 
+  public void destroy(){
+    stop();
+    source = null;
+    target = null;
+    owner = null;
+  }
+
   public void start(){
     this.source.each((String key, String val) -> {
       this.target.set(key, val);
@@ -101,6 +123,11 @@ class ModelJsonParser {
   private ModelBase model;
   private String jsonContent;
   private JSONObject jsonObject;
+
+  public void destroy(){
+    model = null;
+    jsonContent = null;
+  }
 
   public ModelJsonParser(ModelBase model, String json){
     this.model = model;
@@ -128,13 +155,33 @@ class ModelJsonParser {
 }
 
 public class Model extends ModelBase {
-  private List<AttributeTransformer> attributeTransformers;
-  private List<ModelTransformer> modelTransformers;
-  private List<ModelFollower> modelFollowers;
+  private List<AttributeTransformer> attributeTransformers = null;
+  private List<ModelTransformer> modelTransformers = null;
+  private List<ModelFollower> modelFollowers = null;
 
-  public Model(){
-    attributeTransformers = new ArrayList<AttributeTransformer>();
-    modelTransformers = new ArrayList<ModelTransformer>();
+  // public Model(){
+  // }
+
+  public void destroy(){
+    if(attributeTransformers!=null){
+      for(AttributeTransformer t : attributeTransformers)
+        t.destroy();
+      attributeTransformers = null;
+    }
+
+    if(modelTransformers != null){
+      for(ModelTransformer t : modelTransformers)
+        t.destroy();
+      modelTransformers = null;
+    }
+
+    if(modelFollowers != null){
+      for(ModelFollower f : modelFollowers)
+        f.destroy();
+      modelFollowers = null;
+    }
+
+    super.destroy();
   }
 
   public AttributeTransformer transformAttribute(String attr, Consumer<String> func){
@@ -142,12 +189,18 @@ public class Model extends ModelBase {
   }
 
   public AttributeTransformer transformAttribute(String attr, Consumer<String> func, Object owner){
+    if(attributeTransformers == null)
+      attributeTransformers = new ArrayList<AttributeTransformer>();
+
     AttributeTransformer t = new AttributeTransformer(this, attr, func, owner);
     attributeTransformers.add(t);
     return t;
   }
 
   public void stopTransformAttribute(Object owner){
+    if(attributeTransformers == null)
+      return;
+
     Iterator it = attributeTransformers.iterator();
     while(it.hasNext()){
       AttributeTransformer t = (AttributeTransformer)it.next();
@@ -165,12 +218,18 @@ public class Model extends ModelBase {
   }
 
   public ModelTransformer transform(Consumer<ModelBase> func, Object owner){
+    if(modelTransformers == null)
+      modelTransformers = new ArrayList<ModelTransformer>();
+
     ModelTransformer t = new ModelTransformer(this, func, owner);
     modelTransformers.add(t);
     return t;
   }
 
   public void stopTransform(Object owner){
+    if(modelTransformers == null)
+      return;
+
     Iterator it = modelTransformers.iterator();
     while(it.hasNext()){
       ModelTransformer t = (ModelTransformer)it.next();
@@ -198,6 +257,7 @@ public class Model extends ModelBase {
    * this model will register listeners to copy changes to the source model's attributes in the future
    *
    * @param source The source model to follow
+   * @return The created ModelFollower extension instance
    */
   public ModelFollower follow(ModelBase source){
     return follow(source, null);
@@ -212,6 +272,7 @@ public class Model extends ModelBase {
    *
    * @param source The source model to follow
    * @param owner The owner of the connection (which can be used later to stop the connection; see the stopFollow methods)
+   * @return The created ModelFollower extension instance
    */
   public ModelFollower follow(ModelBase source, Object owner){
     return follow(source, owner, true);
@@ -226,6 +287,7 @@ public class Model extends ModelBase {
    * @param source The source model to follow
    * @param owner The owner of the connection (which can be used later to stop the connection; see the stopFollow methods)
    * @param active Flag to specify if the connection should stay active
+   * @return The created ModelFollower extension instance
    */
   public ModelFollower follow(ModelBase source, Object owner, boolean active){
     // create follower (this will also execute initial syncing between models)
@@ -242,7 +304,10 @@ public class Model extends ModelBase {
     return f;
   }
 
-  /** Stop all active follow connections created using calls to this instance's follow methods */
+  /**
+   * Stop all active follow connections created using calls to this instance's follow methods
+   * @return A list of stopped ModelFollower extension instances
+   */
   public List<ModelFollower> stopFollow(){
     return stopFollow(null);
   }
@@ -253,6 +318,7 @@ public class Model extends ModelBase {
    * that were created using calls to this instance's follow methods
    *
    * @param owner The owner of the follow connections that need to be stopped
+   * @return A list of stopped ModelFollower extension instances
    */
   public List<ModelFollower> stopFollow(Object owner){
     List<ModelFollower> stopped = new ArrayList<>();

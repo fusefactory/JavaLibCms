@@ -27,6 +27,34 @@ public class ModelBaseTest {
     return result;
   }
 
+  @Test public void destroy(){
+      ModelBase m = new ModelBase();
+      m.attributeChangeEvent.enableHistory();
+      m.changeEvent.enableHistory();
+
+      m.set("a", "b");
+      m.set("c", "d");
+      m.each((String key, String val) -> {
+        m.set(key+"#2", val+"#2");
+      });
+
+      m.changeEvent.addListener((ModelBase mm) -> {});
+      m.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs args) -> {});
+
+      assertEquals(m.size(), 4);
+      assertEquals(m.attributeChangeEvent.getHistory().size(), 4);
+      assertEquals(m.changeEvent.getHistory().size(), 4);
+      assertEquals(m.attributeChangeEvent.size(), 1);
+      assertEquals(m.changeEvent.size(), 1);
+
+      m.destroy();
+
+      assertEquals(m.size(), 0);
+      assertEquals(m.attributeChangeEvent.getHistory(), null);
+      assertEquals(m.changeEvent.getHistory(), null);
+      assertEquals(m.attributeChangeEvent.size(), 0);
+      assertEquals(m.changeEvent.size(), 0);
+  }
 
   @Test public void set_and_get(){
     strings = new ArrayList<String>();
@@ -66,11 +94,13 @@ public class ModelBaseTest {
 
     strings.clear();
     model.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs arg) -> {
-      strings.add(arg.attr+"//"+arg.value);
+      strings.add(arg.attr+"//"+arg.value+"//"+(arg.previousValue == null ? "" : arg.previousValue));
     }, this);
 
     model.set("aa", "bb");
-    assertEquals(joined(), "aa//bb");
+    assertEquals(joined(), "aa//bb//");
+    model.set("aa", "cc");
+    assertEquals(joined(), "aa//bb//aa//cc//bb");
   }
 
   @Test public void copy(){
