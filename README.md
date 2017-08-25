@@ -1,4 +1,7 @@
 # JavaLibCms
+
+[![Build Status](https://travis-ci.org/fusefactory/JavaLibCms.svg?branch=master)](https://travis-ci.org/fusefactory/JavaLibCms)
+
 "CMS for Java applications" - high level utility classes for managing data (collections) and setting up active data stream.
 
 ## Rational
