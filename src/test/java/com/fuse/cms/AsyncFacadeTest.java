@@ -320,4 +320,16 @@ public class AsyncFacadeTest {
     assertEquals(strings.get(2), "Custom: Test4 Asynced");
     assertEquals(strings.size(), 3);
   }
+
+  @Test public void threadPriority(){
+    AsyncFacade<String, Item> facade = new AsyncFacade<>();
+    assertEquals(facade.getThreadPriority(), (Integer)null);
+    facade.setThreadPriority(1);
+    assertEquals(facade.getThreadPriority(), (Integer)1);
+    facade.setThreadPriority(-1);
+    assertEquals(facade.getThreadPriority(), (Integer)(-1));
+    facade.setThreadPriority(null);
+    assertEquals(facade.getThreadPriority(), (Integer)null);
+  }
+
 }

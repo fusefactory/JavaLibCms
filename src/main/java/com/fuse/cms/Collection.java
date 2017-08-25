@@ -5,6 +5,95 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.function.*;
 
+class CollectionExtension<T> {
+  private CollectionBase<T> collection;
+  private boolean bEnabled = false;
+
+  public CollectionExtension(CollectionBase<T> collection){
+    this.collection = collection;
+  }
+
+  protected void setup(){
+    // virtual
+  }
+
+  protected void destroy(){
+    // virtual
+  }
+
+  public CollectionBase<T> getCollection(){
+    return this.collection;
+  }
+
+  public boolean getEnabled(){
+    return this.bEnabled;
+  }
+
+  public void setEnabled(boolean newEnabled){
+    if(newEnabled == bEnabled)
+      return;
+
+    bEnabled = newEnabled;
+
+    if(bEnabled)
+      this.setup();
+    else
+      this.destroy();
+  }
+
+  public void enable(){
+    setEnabled(true);
+  }
+
+  public void disable(){
+    setEnabled(false);
+  }
+}
+
+class CollectionLimit<T> extends CollectionExtension<T> {
+  private int amount;
+  private boolean bFifo = false;
+
+  public CollectionLimit(CollectionBase<T> collection, int amount){
+    super(collection);
+    this.amount = amount;
+  }
+
+  @Override
+  protected void setup(){
+    getCollection().beforeAddTest.addListener((T newItem) -> {
+      if(getCollection().size() < this.amount)
+        return true;
+
+      // remove oldest item before accepting new item
+      if(bFifo){
+        getCollection().remove(0);
+        return true;
+      }
+
+      // reject new item; collection is full
+      return false;
+    }, this);
+
+    while(getCollection().size() > amount){
+      getCollection().remove(bFifo ? 0 : getCollection().size()-1);
+    }
+  }
+
+  @Override
+  protected void destroy(){
+    getCollection().beforeAddTest.removeListeners(this);
+  }
+
+  public void setAmount(int newAmount){
+    amount = newAmount;
+  }
+
+  public void setFifo(boolean newFifo){
+    bFifo = newFifo;
+  }
+}
+
 class CollectionFilter<T> {
   private CollectionBase<T> collection;
   private List<Predicate<T>> filterFuncs;
@@ -194,9 +283,30 @@ class CollectionTransformer<S,T> extends CollectionTransformerBase {
 
 public class Collection<T> extends CollectionBase<T> {
 
+  private List<CollectionExtension<T>> extensions = null;
   private CollectionFilter<T> colFilter;
   private CollectionSyncer<T> colSyncer;
   private List<CollectionTransformerBase> collectionTransformers;
+
+  protected void addExtension(CollectionExtension<T> newColExt){
+    if(extensions == null)
+      extensions = new ArrayList<CollectionExtension<T>>();
+
+    extensions.add(newColExt);
+  }
+
+  protected boolean removeExtension(CollectionExtension<T> colExt){
+    if(extensions == null)
+      return false;
+
+    boolean result = extensions.remove(colExt);
+
+    // cleanup
+    if(extensions.isEmpty())
+      extensions = null;
+
+    return result;
+  }
 
   /// virtual method, currently only implemented in ModelCollection
   public boolean loadJsonFromFile(String filePath){
@@ -254,7 +364,10 @@ public class Collection<T> extends CollectionBase<T> {
     return colSyncer;
   }
 
-  /** create new collection instance which syncs from this but registers the given filter */
+  /** create new collection instance which syncs from this but registers the given filter
+   * @param func Predicate function that provides the filter-logic
+   * @return Collection A new Collection instance with this Collection's filtered content
+   */
   public Collection<T> filtered(Predicate<T> func){
     return filtered(func, true);
   }
@@ -262,6 +375,9 @@ public class Collection<T> extends CollectionBase<T> {
   /** create new collection instance which applies the given filter and copies
    * the content of this collection. If the active param is true, it will also
    * register listeners to stay synced with this collection.
+   * @param func Predicate function that provides the filter-logic
+   * @param active when true, it will also filter newly added items in the future
+   * @return Collection A new Collection instance with this Collection's filtered content
    */
   public Collection<T> filtered(Predicate<T> func, boolean active){
     Collection<T> newCol = new Collection<T>();
@@ -291,6 +407,7 @@ public class Collection<T> extends CollectionBase<T> {
   /**
    * Convenience method for readability (a call to stopWithAll looks more related)
    * to a previous withAll call than add call to .addEvent.removeListeners
+   * @param owner The owner who's listeners we want to remove
    */
   public void stopWithAll(Object owner){
     System.out.println("Collection.stopWithAll is DEPRECATED, call addEvent.removeListeners directly.");
@@ -336,5 +453,45 @@ public class Collection<T> extends CollectionBase<T> {
 
     if(collectionTransformers.isEmpty())
       collectionTransformers = null;
+  }
+
+  private CollectionLimit<T> getLimitExtension(){
+    if(extensions == null)
+      return null;
+
+    for(CollectionExtension<T> ext : extensions)
+      if(CollectionLimit.class.isInstance(ext) && ext.getCollection() == this)
+        return (CollectionLimit<T>)ext;
+
+    return null;
+  }
+
+  public CollectionExtension setLimit(int amount){
+    // remove existing extension first; can only be one limit extension at-a-time
+    CollectionLimit<T> ext = getLimitExtension();
+    if(ext != null){
+      ext.disable();
+      removeExtension(ext);
+    }
+
+    ext = new CollectionLimit<>(this, amount);
+    ext.enable();
+    addExtension(ext);
+    return ext;
+  }
+
+  public CollectionExtension setLimitFifo(int amount){
+    // remove existing extension first; can only be one limit extension at-a-time
+    CollectionLimit<T> ext = getLimitExtension();
+    if(ext != null){
+      ext.disable();
+      removeExtension(ext);
+    }
+
+    ext = new CollectionLimit<>(this, amount);
+    ext.setFifo(true);
+    ext.enable();
+    addExtension(ext);
+    return ext;
   }
 }

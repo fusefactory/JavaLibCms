@@ -257,6 +257,7 @@ public class Model extends ModelBase {
    * this model will register listeners to copy changes to the source model's attributes in the future
    *
    * @param source The source model to follow
+   * @return The created ModelFollower extension instance
    */
   public ModelFollower follow(ModelBase source){
     return follow(source, null);
@@ -271,6 +272,7 @@ public class Model extends ModelBase {
    *
    * @param source The source model to follow
    * @param owner The owner of the connection (which can be used later to stop the connection; see the stopFollow methods)
+   * @return The created ModelFollower extension instance
    */
   public ModelFollower follow(ModelBase source, Object owner){
     return follow(source, owner, true);
@@ -285,6 +287,7 @@ public class Model extends ModelBase {
    * @param source The source model to follow
    * @param owner The owner of the connection (which can be used later to stop the connection; see the stopFollow methods)
    * @param active Flag to specify if the connection should stay active
+   * @return The created ModelFollower extension instance
    */
   public ModelFollower follow(ModelBase source, Object owner, boolean active){
     // create follower (this will also execute initial syncing between models)
@@ -301,7 +304,10 @@ public class Model extends ModelBase {
     return f;
   }
 
-  /** Stop all active follow connections created using calls to this instance's follow methods */
+  /**
+   * Stop all active follow connections created using calls to this instance's follow methods
+   * @return A list of stopped ModelFollower extension instances
+   */
   public List<ModelFollower> stopFollow(){
     return stopFollow(null);
   }
@@ -312,6 +318,7 @@ public class Model extends ModelBase {
    * that were created using calls to this instance's follow methods
    *
    * @param owner The owner of the follow connections that need to be stopped
+   * @return A list of stopped ModelFollower extension instances
    */
   public List<ModelFollower> stopFollow(Object owner){
     List<ModelFollower> stopped = new ArrayList<>();

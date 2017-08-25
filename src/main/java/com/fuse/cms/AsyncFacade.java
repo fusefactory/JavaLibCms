@@ -15,9 +15,9 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private boolean bDispatchOnUpdate;
     private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
-    // TODO; turn into normal list, so we have no circular dependencies between AsyncFacade and Collection class
     private Map<K, AsyncOperation<V>> activeAsyncOperations;
-    private MapCollection<K, V> usedMapCollection;
+    private MapCollection<K, V> usedMapCollection; //TODO REMOVE
+    private Integer threadPriority = null;
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
     public AsyncFacade(){
@@ -122,6 +122,9 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
                 }
             });
 
+            if(this.threadPriority != null)
+                thread.setPriority(this.threadPriority);
+
             thread.start();
         });
     }
@@ -166,7 +169,16 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         return bDispatchOnUpdate;
     }
 
+    //TODO REMOVE
     public void use(MapCollection map){
         usedMapCollection = map;
+    }
+
+    public void setThreadPriority(Integer newPrio){
+        this.threadPriority = newPrio;
+    }
+
+    public Integer getThreadPriority(){
+        return this.threadPriority;
     }
 };

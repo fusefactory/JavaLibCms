@@ -179,4 +179,35 @@ public class CollectionTest {
     assertEquals(col2.size(), 1);
     assertEquals(col2.get(0).name, "-b");
   }
+
+  @Test public void setLimit(){
+    Collection<TmpKlass> col = new Collection();
+
+    assertEquals(col.size(), 0);
+    col.add(new TmpKlass("1"));
+    assertEquals(col.size(), 1);
+    col.add(new TmpKlass("2"));
+    assertEquals(col.size(), 2);
+    col.add(new TmpKlass("3"));
+    assertEquals(col.size(), 3);
+    col.add(new TmpKlass("4"));
+    assertEquals(col.size(), 4);
+
+    // enable limit
+    col.setLimit(3);
+    assertEquals(col.size(), 3);
+    assertEquals(col.get(0).attr, "1"); // not FIFO
+    assertEquals(col.get(2).attr, "3"); // not FIFO
+
+    col.add(new TmpKlass("5"));
+    assertEquals(col.size(), 3);
+    assertEquals(col.get(0).attr, "1"); // not FIFO
+    assertEquals(col.get(2).attr, "3"); // not FIFO
+
+    col.setLimitFifo(3);
+    assertEquals(col.size(), 3);
+    col.add(new TmpKlass("5"));
+    assertEquals(col.get(0).attr, "2"); // not FIFO
+    assertEquals(col.get(2).attr, "5"); // not FIFO
+  }
 }
