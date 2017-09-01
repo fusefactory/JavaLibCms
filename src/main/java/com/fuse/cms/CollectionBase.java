@@ -14,12 +14,11 @@ import com.fuse.utils.Event;
 import com.fuse.utils.Test;
 
 class ColMod<T> {
-  public T addItem;
-  public Object removeItem;
-  public boolean clear;
-  public int removeIndex;
-
-  public ColMod(){ removeIndex = -1; }
+  public T addItem = null;
+  public Object removeItem = null;
+  public boolean clear = false;
+  public int removeIndex = -1;
+  // public boolean destroy = false;
 }
 
 public class CollectionBase<T> extends ArrayList<T> {
@@ -39,6 +38,15 @@ public class CollectionBase<T> extends ArrayList<T> {
   }
 
   public void destroy(){
+    // if(isLocked()){
+    //   ColMod<T> m = new ColMod<T>();
+    //   m.destroy = true;
+    //   if(modQueue == null)
+    //     modQueue = new ArrayList<>();
+    //   modQueue.add(m);
+    //   return;
+    // }
+
     addEvent.destroy();
     removeEvent.destroy();
     beforeAddTest = new Test<T>();
@@ -161,7 +169,9 @@ public class CollectionBase<T> extends ArrayList<T> {
     if(modQueue == null)
       return;
 
-    for(ColMod<T> m : modQueue){
+    for(int idx=0; idx<modQueue.size(); idx++){
+      ColMod<T> m = modQueue.get(idx);
+
       if(m == null)
         continue;
 
@@ -173,6 +183,11 @@ public class CollectionBase<T> extends ArrayList<T> {
         remove(m.removeIndex);
       if(m.clear)
         clear();
+
+      // if(m.destroy){
+      //   destroy();
+      //   return;
+      // }
     }
 
     modQueue.clear();
