@@ -7,6 +7,40 @@ import java.util.function.Consumer;
 
 import org.json.*;
 
+class ModelExtension {
+  protected ModelBase model;
+  protected Object owner;
+
+  public ModelExtension(ModelBase model){
+    this.model = model;
+    this.owner = null;
+  }
+
+  public ModelExtension(ModelBase model, Object owner){
+    this.model = model;
+    this.owner = owner;
+  }
+
+  public void destroy(){
+    stop();
+    this.model = null;
+    this.owner = null;
+  }
+
+  public void start(){
+    // "virtual"; override
+  }
+
+  public void stop(){
+    // "virtual"; override
+  }
+
+  public Object getOwner(){
+     return owner;
+  }
+}
+
+
 class AttributeTransformer {
   private ModelBase model;
   private String attr;
@@ -74,7 +108,8 @@ class ModelTransformer {
   }
 
   public void stop(){
-    model.changeEvent.removeListeners(this);
+    if(this.model != null)
+      model.changeEvent.removeListeners(this);
   }
 
   public Object getOwner(){
@@ -82,40 +117,41 @@ class ModelTransformer {
   }
 }
 
-class ModelFollower {
-  private ModelBase source, target;
-  private Object owner;
+class ModelFollower extends ModelExtension {
+  private ModelBase source;
 
   public ModelFollower(ModelBase source, ModelBase target, Object owner){
+    super(target, owner);
     this.source = source;
-    this.target = target;
-    this.owner = owner;
     start();
   }
 
+  @Override
   public void destroy(){
-    stop();
+    super.destroy();
     source = null;
-    target = null;
-    owner = null;
   }
 
+  @Override
   public void start(){
+    if(this.source == null){
+      // log warning?
+      return;
+    }
+
     this.source.each((String key, String val) -> {
-      this.target.set(key, val);
+      this.model.set(key, val);
     });
 
     this.source.attributeChangeEvent.addListener((ModelBase.AttributeChangeArgs args) -> {
-        this.target.set(args.attr, args.value);
+        this.model.set(args.attr, args.value);
     }, this);
   }
 
+  @Override
   public void stop(){
-    this.source.attributeChangeEvent.removeListeners(this);
-  }
-
-  public Object getOwner(){
-     return owner;
+    if(this.source != null)
+      this.source.attributeChangeEvent.removeListeners(this);
   }
 }
 
@@ -157,7 +193,7 @@ class ModelJsonParser {
 public class Model extends ModelBase {
   private List<AttributeTransformer> attributeTransformers = null;
   private List<ModelTransformer> modelTransformers = null;
-  private List<ModelFollower> modelFollowers = null;
+  private List<ModelExtension> extensions = null;
 
   // public Model(){
   // }
@@ -175,13 +211,46 @@ public class Model extends ModelBase {
       modelTransformers = null;
     }
 
-    if(modelFollowers != null){
-      for(ModelFollower f : modelFollowers)
-        f.destroy();
-      modelFollowers = null;
+    while(extensions != null && !extensions.isEmpty()){
+      ModelExtension ext = extensions.get(0);
+      removeExtension(ext);
     }
 
     super.destroy();
+  }
+
+  protected void addExtensions(ModelExtension ext){
+    if(extensions == null) // lazy-initialization
+      extensions = new ArrayList<>();
+
+    if(!extensions.contains(ext))
+      extensions.add(ext);
+  }
+
+  protected void removeExtension(ModelExtension ext){
+    if(extensions != null){
+      extensions.remove(ext);
+
+      if(extensions.isEmpty())
+        extensions = null; // cleanup
+    }
+
+    ext.destroy();
+  }
+
+  protected List<ModelExtension> removeExtensionByOwner(Object owner){
+    List<ModelExtension> result = new ArrayList<>();
+
+    for(int idx=extensions.size()-1; idx>=0; idx--){
+      ModelExtension ext = extensions.get(idx);
+
+      if(ext.getOwner() == owner){
+        removeExtension(ext);
+        result.add(ext);
+      }
+    }
+
+    return result;
   }
 
   public AttributeTransformer transformAttribute(String attr, Consumer<String> func){
@@ -296,7 +365,7 @@ public class Model extends ModelBase {
     // only store the follower if we want active syncing (not just once) ,
     // otherwise stop the follower and let the garbage collector pick it up
     if(active){
-      this.modelFollowers.add(f);
+      addExtensions(f);
     } else {
       f.stop();
     }
@@ -308,7 +377,7 @@ public class Model extends ModelBase {
    * Stop all active follow connections created using calls to this instance's follow methods
    * @return A list of stopped ModelFollower extension instances
    */
-  public List<ModelFollower> stopFollow(){
+  public List<ModelExtension> stopFollow(){
     return stopFollow(null);
   }
 
@@ -320,20 +389,7 @@ public class Model extends ModelBase {
    * @param owner The owner of the follow connections that need to be stopped
    * @return A list of stopped ModelFollower extension instances
    */
-  public List<ModelFollower> stopFollow(Object owner){
-    List<ModelFollower> stopped = new ArrayList<>();
-
-    for(ModelFollower f : modelFollowers){
-      if(owner == null || f.getOwner() == owner){
-        stopped.add(f);
-      }
-    }
-
-    for(ModelFollower f : stopped){
-      f.stop();
-      modelFollowers.remove(f);
-    }
-
-    return stopped;
+  public List<ModelExtension> stopFollow(Object owner){
+    return removeExtensionByOwner(owner);
   }
 }

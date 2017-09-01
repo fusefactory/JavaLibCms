@@ -210,4 +210,35 @@ public class CollectionTest {
     assertEquals(col.get(0).attr, "2"); // not FIFO
     assertEquals(col.get(2).attr, "5"); // not FIFO
   }
+
+  @Test public void destroy(){
+    Collection<TmpKlass> col = new Collection<>();
+    Collection<TmpKlass> col2 = new Collection<>();
+
+    col.addEvent.addListener((TmpKlass k) -> {});
+    col.removeEvent.addListener((TmpKlass k) -> {});
+    col.beforeAddTest.addListener((TmpKlass k) -> { return true; });
+    col.accept((TmpKlass k) -> { return true; });
+    col.sync(col2);
+    col.filtered((TmpKlass k) -> { return true; });
+    col.withAll((TmpKlass k) -> {});
+    col.transform((TmpKlass k) -> { return "foo"; });
+    col.setLimit(5);
+
+    col.add(new TmpKlass("foo"));
+
+    assertEquals(col.addEvent.size(), 4);
+    assertEquals(col.removeEvent.size(), 3);
+    assertEquals(col.beforeAddTest.size(), 3);
+    assertEquals(col.size(), 1);
+    assertEquals((int)col.getLimit(), 5);
+
+    col.destroy();
+
+    assertEquals(col.addEvent.size(), 0);
+    assertEquals(col.removeEvent.size(), 0);
+    assertEquals(col.beforeAddTest.size(), 0);
+    assertEquals(col.size(), 0);
+    assertEquals(col.getLimit(), null);
+  }
 }

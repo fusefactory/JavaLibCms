@@ -18,7 +18,8 @@ class CollectionExtension<T> {
   }
 
   protected void destroy(){
-    // virtual
+    disable();
+    collection = null;
   }
 
   public CollectionBase<T> getCollection(){
@@ -82,11 +83,19 @@ class CollectionLimit<T> extends CollectionExtension<T> {
 
   @Override
   protected void destroy(){
-    getCollection().beforeAddTest.removeListeners(this);
+    CollectionBase<T> col = getCollection();
+    if(col != null)
+      col.beforeAddTest.removeListeners(this);
+
+    super.destroy();
   }
 
   public void setAmount(int newAmount){
     amount = newAmount;
+  }
+
+  public int getAmount(){
+    return amount;
   }
 
   public void setFifo(boolean newFifo){
@@ -284,9 +293,16 @@ class CollectionTransformer<S,T> extends CollectionTransformerBase {
 public class Collection<T> extends CollectionBase<T> {
 
   private List<CollectionExtension<T>> extensions = null;
-  private CollectionFilter<T> colFilter;
-  private CollectionSyncer<T> colSyncer;
-  private List<CollectionTransformerBase> collectionTransformers;
+  private CollectionFilter<T> colFilter = null;
+  private CollectionSyncer<T> colSyncer = null;
+  private List<CollectionTransformerBase> collectionTransformers = null;
+
+  @Override public void destroy(){
+    while(extensions != null && !extensions.isEmpty())
+      removeExtension(extensions.get(0));
+
+    super.destroy();
+  }
 
   protected void addExtension(CollectionExtension<T> newColExt){
     if(extensions == null)
@@ -296,15 +312,17 @@ public class Collection<T> extends CollectionBase<T> {
   }
 
   protected boolean removeExtension(CollectionExtension<T> colExt){
-    if(extensions == null)
-      return false;
+    boolean result = false;
 
-    boolean result = extensions.remove(colExt);
+    if(extensions != null){
+      result = extensions.remove(colExt);
 
-    // cleanup
-    if(extensions.isEmpty())
-      extensions = null;
+      // cleanup
+      if(extensions.isEmpty())
+        extensions = null;
+    }
 
+    colExt.destroy();
     return result;
   }
 
@@ -469,6 +487,7 @@ public class Collection<T> extends CollectionBase<T> {
   public CollectionExtension setLimit(int amount){
     // remove existing extension first; can only be one limit extension at-a-time
     CollectionLimit<T> ext = getLimitExtension();
+
     if(ext != null){
       ext.disable();
       removeExtension(ext);
@@ -483,15 +502,18 @@ public class Collection<T> extends CollectionBase<T> {
   public CollectionExtension setLimitFifo(int amount){
     // remove existing extension first; can only be one limit extension at-a-time
     CollectionLimit<T> ext = getLimitExtension();
-    if(ext != null){
-      ext.disable();
+    if(ext != null)
       removeExtension(ext);
-    }
 
     ext = new CollectionLimit<>(this, amount);
     ext.setFifo(true);
     ext.enable();
     addExtension(ext);
     return ext;
+  }
+
+  public Integer getLimit(){
+    CollectionLimit<T> ext = getLimitExtension();
+    return (ext == null) ? null : ext.getAmount();
   }
 }
