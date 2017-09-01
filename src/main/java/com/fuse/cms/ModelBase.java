@@ -227,6 +227,10 @@ public class ModelBase {
     return getVecX(attr, 3, defaultValue);
   }
 
+  public float[] getVecX(String attr, int count){
+    return getVecX(attr, count, null);
+  }
+
   public float[] getVecX(String attr, int count, float[] defaultValue){
     String[] parts = get(attr, "").split(",");
 
@@ -239,7 +243,7 @@ public class ModelBase {
         } catch (java.lang.NumberFormatException exc){}
       }
 
-      if(Array.getLength(defaultValue) > i){
+      if(defaultValue != null && Array.getLength(defaultValue) > i){
         result[i] = defaultValue[i];
         continue;
       }

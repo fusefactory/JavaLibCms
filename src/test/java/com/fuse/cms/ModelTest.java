@@ -153,16 +153,27 @@ public class ModelTest {
   }
 
   @Test public void destroy(){
+
     Model m = new Model();
     strings = new ArrayList<>();
-    m.transformAttribute("abc", (String val) -> strings.add("1-"+val));
-    m.transform((ModelBase mb) -> strings.add("2-"+mb.get("abc")));
-    m.set("abc", "def");
-    assertEquals(joined(","), "2-null,2-def,1-def");
-    m.set("abc", "ghi");
-    assertEquals(joined(","), "2-null,2-def,1-def,2-ghi,1-ghi");
+
+    Model followSourceModel = new Model();
+    assertEquals(followSourceModel.attributeChangeEvent.size(), 0);
+    m.follow(followSourceModel);
+    assertEquals(followSourceModel.attributeChangeEvent.size(), 1);
+
+    assertEquals(m.attributeChangeEvent.size(), 0);
+    m.transformAttribute("abc", (String val) -> {});
+    assertEquals(m.attributeChangeEvent.size(), 1);
+
+    assertEquals(m.changeEvent.size(), 0);
+    m.transform((ModelBase mb) -> {});
+    assertEquals(m.changeEvent.size(), 1);
+
     m.destroy();
-    m.set("abc", "jkl");
-    assertEquals(joined(","), "2-null,2-def,1-def,2-ghi,1-ghi");
+
+    assertEquals(followSourceModel.attributeChangeEvent.size(), 0);
+    assertEquals(m.attributeChangeEvent.size(), 0);
+    assertEquals(m.changeEvent.size(), 0);
   }
 }

@@ -44,6 +44,8 @@ public class CollectionBase<T> extends ArrayList<T> {
     beforeAddTest = new Test<T>();
     instantiatorFunc = null;
     modQueue = null;
+
+    this.clear();
   }
 
   public boolean add(T item){
