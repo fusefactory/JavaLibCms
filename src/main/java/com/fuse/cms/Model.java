@@ -47,14 +47,18 @@ class AttributeTransformer {
   private Consumer<String> func;
   private Object owner;
 
-  public AttributeTransformer(ModelBase model, String attr, Consumer<String> func, Object owner){
+  public AttributeTransformer(ModelBase model, String attr, Consumer<String> func, Object owner, boolean active){
     this.owner = owner;
     this.model = model;
     this.attr = attr;
     this.func = func;
-    start();
+
     if(model.has(attr))
       func.accept(model.get(attr));
+
+    if(active){
+      start();
+    }
   };
 
   public void destroy(){
@@ -261,8 +265,17 @@ public class Model extends ModelBase {
     if(attributeTransformers == null)
       attributeTransformers = new ArrayList<AttributeTransformer>();
 
-    AttributeTransformer t = new AttributeTransformer(this, attr, func, owner);
+    AttributeTransformer t = new AttributeTransformer(this, attr, func, owner, true);
     attributeTransformers.add(t);
+    return t;
+  }
+
+  public AttributeTransformer transformAttribute(String attr, Consumer<String> func, boolean active){
+    AttributeTransformer t = new AttributeTransformer(this, attr, func, null, active); // auto-runs
+    if(!active){
+      t.destroy();
+    }
+
     return t;
   }
 
