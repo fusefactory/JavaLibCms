@@ -47,14 +47,18 @@ class AttributeTransformer {
   private Consumer<String> func;
   private Object owner;
 
-  public AttributeTransformer(ModelBase model, String attr, Consumer<String> func, Object owner){
+  public AttributeTransformer(ModelBase model, String attr, Consumer<String> func, Object owner, boolean active){
     this.owner = owner;
     this.model = model;
     this.attr = attr;
     this.func = func;
-    start();
+
     if(model.has(attr))
       func.accept(model.get(attr));
+
+    if(active){
+      start();
+    }
   };
 
   public void destroy(){
@@ -86,12 +90,13 @@ class ModelTransformer {
   private Consumer<ModelBase> func;
   private Object owner;
 
-  public ModelTransformer(ModelBase model, Consumer<ModelBase> func, Object owner){
+  public ModelTransformer(ModelBase model, Consumer<ModelBase> func, Object owner, boolean active){
     this.owner = owner;
     this.model = model;
     this.func = func;
-    start();
     func.accept(model);
+    if(active)
+      start();
   };
 
   public void destroy(){
@@ -254,15 +259,28 @@ public class Model extends ModelBase {
   }
 
   public AttributeTransformer transformAttribute(String attr, Consumer<String> func){
-    return transformAttribute(attr, func, null);
+    return transformAttribute(attr, func, null, true);
+  }
+
+  public AttributeTransformer transformAttribute(String attr, Consumer<String> func, boolean active){
+    return transformAttribute(attr, func, null, active);
   }
 
   public AttributeTransformer transformAttribute(String attr, Consumer<String> func, Object owner){
-    if(attributeTransformers == null)
-      attributeTransformers = new ArrayList<AttributeTransformer>();
+    return transformAttribute(attr, func, owner, true);
+  }
 
-    AttributeTransformer t = new AttributeTransformer(this, attr, func, owner);
-    attributeTransformers.add(t);
+  public AttributeTransformer transformAttribute(String attr, Consumer<String> func, Object owner, boolean active){
+    AttributeTransformer t = new AttributeTransformer(this, attr, func, owner, true);
+
+    if(active){
+      if(attributeTransformers == null)
+        attributeTransformers = new ArrayList<AttributeTransformer>();
+      attributeTransformers.add(t);
+    } else {
+      t.destroy();
+    }
+
     return t;
   }
 
@@ -283,15 +301,29 @@ public class Model extends ModelBase {
 
 
   public ModelTransformer transform(Consumer<ModelBase> func){
-    return transform(func, null);
+    return transform(func, null, true);
+  }
+
+  public ModelTransformer transform(Consumer<ModelBase> func, boolean active){
+    return transform(func, null, active);
   }
 
   public ModelTransformer transform(Consumer<ModelBase> func, Object owner){
-    if(modelTransformers == null)
-      modelTransformers = new ArrayList<ModelTransformer>();
+    return transform(func, owner, true);
+  }
 
-    ModelTransformer t = new ModelTransformer(this, func, owner);
-    modelTransformers.add(t);
+  public ModelTransformer transform(Consumer<ModelBase> func, Object owner, boolean active){
+    ModelTransformer t = new ModelTransformer(this, func, owner, active);
+
+    if(active){
+      if(modelTransformers == null)
+        modelTransformers = new ArrayList<ModelTransformer>();
+
+      modelTransformers.add(t);
+    } else {
+      t.destroy();
+    }
+
     return t;
   }
 

@@ -53,10 +53,10 @@ public class ModelTest {
   @Test public void transformAttribute(){
     strings = new ArrayList<String>();
 
-    Model m = new Model();
-    m.set("name", "John");
-
     {
+      Model m = new Model();
+      m.set("name", "John");
+
       strings.clear();
 
       AttributeTransformer transformer = m.transformAttribute("name", (String value) -> {
@@ -78,16 +78,41 @@ public class ModelTest {
       m.set("name", "Bob");
       assertEquals(joined(), ":: John:: Doe:: Dane");
     }
+
+    { // active
+      Model model = new Model();
+      strings.clear();
+      model.set("name", "Bob");
+      assertEquals(joined(), "");
+      assertEquals(model.attributeChangeEvent.size(), 0);
+      model.transformAttribute("name", (String value) -> { strings.add(value); }, true /* active */);
+      assertEquals(model.attributeChangeEvent.size(), 1);
+      assertEquals(joined(), "Bob");
+      model.set("name", "Bobby");
+      assertEquals(joined(), "BobBobby");
+    }
+
+    { // inactive
+      Model m = new Model();
+      strings.clear();
+      m.set("name", "Bob");
+      assertEquals(m.attributeChangeEvent.size(), 0);
+      m.transformAttribute("name", (String value) -> { strings.add(value); }, false /* inactive */);
+      assertEquals(m.attributeChangeEvent.size(), 0);
+      m.set("name", "Bobby");
+      assertEquals(joined(), "Bob");
+    }
   }
 
   @Test public void transform(){
     strings = new ArrayList<String>();
 
     strings.clear();
-    Model m = new Model();
-    m.set("name", "John");
 
     {
+      Model m = new Model();
+      m.set("name", "John");
+
       ModelTransformer transformer = m.transform((ModelBase model) -> {
         strings.add(":: "+model.get("name"));
       }, this);
@@ -106,6 +131,36 @@ public class ModelTest {
       m.stopTransform(this);
       m.set("name", "Bob");
       assertEquals(joined(), ":: John:: Doe:: Dane");
+    }
+
+    {
+      strings.clear();
+      Model m = new Model();
+      m.set("name", "John");
+      assertEquals(m.changeEvent.size(), 0);
+      m.transform((ModelBase model) -> {
+        strings.add(":: "+m.get("name"));
+      }, true /* active */);
+      assertEquals(m.changeEvent.size(), 1);
+      assertEquals(joined(), ":: John");
+
+      m.set("name", "Bob");
+      assertEquals(joined(), ":: John:: Bob");
+    }
+
+    {
+      strings.clear();
+      Model m = new Model();
+      m.set("name", "John");
+      assertEquals(m.changeEvent.size(), 0);
+      m.transform((ModelBase model) -> {
+        strings.add(":: "+m.get("name"));
+      }, false /* inactive */);
+      assertEquals(m.changeEvent.size(), 0);
+      assertEquals(joined(), ":: John");
+
+      m.set("name", "Bob");
+      assertEquals(joined(), ":: John");
     }
   }
 
