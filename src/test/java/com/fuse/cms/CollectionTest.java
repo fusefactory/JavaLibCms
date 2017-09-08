@@ -241,4 +241,29 @@ public class CollectionTest {
     assertEquals(col.size(), 0);
     assertEquals(col.getLimit(), null);
   }
+
+  @Test public void destroy_when_locked(){
+    Collection<TmpKlass> col = new Collection<>();
+    col.add(new TmpKlass("foo"));
+    col.add(new TmpKlass("bar"));
+    col.addEvent.addListener((TmpKlass t) -> {});
+    col.removeEvent.addListener((TmpKlass t) -> {});
+
+    assertEquals(col.size(), 2);
+    assertEquals(col.addEvent.size(), 1);
+    assertEquals(col.removeEvent.size(), 1);
+
+    List<String> dummyList = new ArrayList<>();
+
+    col.each((TmpKlass t) -> {
+      dummyList.add("");
+      col.destroy();
+      dummyList.add("");
+    });
+
+    assertEquals(col.size(), 0);
+    assertEquals(dummyList.size(), 4);
+    assertEquals(col.addEvent.size(), 0);
+    assertEquals(col.removeEvent.size(), 0);
+  }
 }
