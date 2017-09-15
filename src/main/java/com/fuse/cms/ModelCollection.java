@@ -3,6 +3,7 @@ package com.fuse.cms;
 import java.util.logging.*;
 import java.util.Iterator;
 import java.nio.file.*;
+import java.nio.charset.Charset;
 import java.io.IOException;
 import org.json.*;
 
@@ -11,11 +12,13 @@ class JsonLoader {
   private ModelCollectionBase collection;
   private Logger logger;
   private String primaryKeyAttributeName;
+  private Charset charset; // TODO; make configurable?
 
   public JsonLoader(ModelCollectionBase collection){
     logger = Logger.getLogger(JsonLoader.class.getName());
     this.collection = collection;
     primaryKeyAttributeName = "id";
+    this.charset = Charset.forName("UTF-8");
   }
 
   public boolean loadFile(String filePath){
@@ -23,7 +26,7 @@ class JsonLoader {
 
     String content;
     try {
-      content = new String(Files.readAllBytes(Paths.get(filePath)));
+      content = new String(Files.readAllBytes(Paths.get(filePath)), this.charset);
     } catch(java.io.IOException exc){
       logger.warning("IOException: "+exc.toString());
       return false;
@@ -115,10 +118,12 @@ class JsonLoader {
 class JsonWriter {
   private ModelCollectionBase collection;
   private Logger logger;
+  private Charset charset; // TODO; make configurable
 
   public JsonWriter(ModelCollectionBase col){
     logger = Logger.getLogger(JsonLoader.class.getName());
     collection = col;
+    this.charset = Charset.forName("UTF-8");
   }
 
   public String toJsonString(){
@@ -142,7 +147,7 @@ class JsonWriter {
     logger.fine("saving collection json to file: " + filePath);
 
     try {
-      Files.write(Paths.get(filePath), this.toJsonString().getBytes());
+      Files.write(Paths.get(filePath), this.toJsonString().getBytes(this.charset));
       return true;
     } catch (IOException exc) {
       logger.warning("IOException: "+exc.toString());
