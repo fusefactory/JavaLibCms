@@ -109,7 +109,7 @@ public class ModelTest {
 
     strings.clear();
 
-    {
+    { // implicitly active (default)
       Model m = new Model();
       m.set("name", "John");
 
@@ -133,7 +133,7 @@ public class ModelTest {
       assertEquals(joined(), ":: John:: Doe:: Dane");
     }
 
-    {
+    { // explicitly active
       strings.clear();
       Model m = new Model();
       m.set("name", "John");
@@ -148,7 +148,7 @@ public class ModelTest {
       assertEquals(joined(), ":: John:: Bob");
     }
 
-    {
+    { // inactive
       strings.clear();
       Model m = new Model();
       m.set("name", "John");

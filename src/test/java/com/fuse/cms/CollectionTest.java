@@ -109,11 +109,14 @@ public class CollectionTest {
   }
 
   @Test public void filtered(){
+    // setup
     Collection<TmpKlass> col1 = new Collection<TmpKlass>();
     TmpKlass item = new TmpKlass("a");
     col1.add(new TmpKlass("ab"));
     col1.add(new TmpKlass("bc"));
     col1.add(new TmpKlass("cd"));
+
+    // TEST active (default)
     Collection<TmpKlass> col2 = col1.filtered((TmpKlass tmp) -> { return tmp.attr == "bc"; });
     // copied the one matching model
     assertEquals(col2.size(), 1);
@@ -126,6 +129,7 @@ public class CollectionTest {
     assertEquals(col1.size(), 4);
     assertEquals(col2.get(1), col1.get(3));
 
+    // TEST inactive
     Collection<TmpKlass> col3 = new Collection<TmpKlass>();
     col3.add(new TmpKlass("111"));
     col3.add(new TmpKlass("222"));
