@@ -2,19 +2,21 @@ package com.fuse.cms;
 
 import java.util.logging.*;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.HashMap;
 import java.nio.file.*;
+import java.nio.charset.Charset;
 import org.json.*;
 
 
 class ModelCollectionManagerJsonLoader {
   private ModelCollectionManager manager;
   private Logger logger;
+  private Charset charset;
 
   public ModelCollectionManagerJsonLoader(ModelCollectionManager manager){
     logger = Logger.getLogger(JsonLoader.class.getName());
     this.manager = manager;
+    this.charset = Charset.forName("UTF-8");
   }
 
   public boolean loadFile(String filePath){
@@ -22,7 +24,7 @@ class ModelCollectionManagerJsonLoader {
 
     String content;
     try {
-      content = new String(Files.readAllBytes(Paths.get(filePath)));
+      content = new String(Files.readAllBytes(Paths.get(filePath)), this.charset);
     } catch(java.io.IOException exc){
       logger.warning("IOException: "+exc.toString());
       return false;

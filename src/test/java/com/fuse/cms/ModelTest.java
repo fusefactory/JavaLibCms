@@ -2,6 +2,7 @@ package com.fuse.cms;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -109,7 +110,7 @@ public class ModelTest {
 
     strings.clear();
 
-    {
+    { // implicitly active (default)
       Model m = new Model();
       m.set("name", "John");
 
@@ -133,7 +134,7 @@ public class ModelTest {
       assertEquals(joined(), ":: John:: Doe:: Dane");
     }
 
-    {
+    { // explicitly active
       strings.clear();
       Model m = new Model();
       m.set("name", "John");
@@ -148,7 +149,7 @@ public class ModelTest {
       assertEquals(joined(), ":: John:: Bob");
     }
 
-    {
+    { // inactive
       strings.clear();
       Model m = new Model();
       m.set("name", "John");
@@ -196,8 +197,8 @@ public class ModelTest {
     assertEquals(joined(","), "John,Oliver,Bob");
   }
 
-  @Test public void follow_stopFollow(){
-    System.out.println("TODO");
+  @Ignore @Test public void follow_stopFollow(){
+    assertEquals("TODO", "DONE");
   }
 
   @Test public void getId(){

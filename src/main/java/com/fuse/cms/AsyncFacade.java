@@ -13,11 +13,14 @@ import com.fuse.utils.Event;
 public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     private boolean bDispatchOnUpdate;
+    private boolean bRecycleActiveOperations = true;
     private Function<K, V> syncLoader;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
     private Map<K, AsyncOperation<V>> activeAsyncOperations;
     private Integer threadPriority = null;
+
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
+    
 
     public AsyncFacade(){
         syncLoader = null;
@@ -47,7 +50,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public AsyncOperation<V> getAsync(K key){
         // first see if there are any active asyncoperations for the same key
-        if(activeAsyncOperations != null && activeAsyncOperations.containsKey(key))
+        if(bRecycleActiveOperations && activeAsyncOperations != null && activeAsyncOperations.containsKey(key))
             return activeAsyncOperations.get(key);
 
         AsyncOperation<V> op;
@@ -159,5 +162,13 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public Integer getThreadPriority(){
         return this.threadPriority;
+    }
+    
+    public boolean getRecycleActiveOperations() {
+    	return bRecycleActiveOperations;
+    }
+    
+    public void setRecycleActiveOperations(boolean enable) {
+    	bRecycleActiveOperations = enable;
     }
 };
