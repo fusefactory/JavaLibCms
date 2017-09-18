@@ -2,6 +2,7 @@ package com.fuse.cms;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.io.File;
 import java.nio.file.*;
@@ -55,6 +56,10 @@ public class ModelCollectionTest {
       assertEquals(col.get(0).get("value"), "1ne");
       assertEquals(col.get(1).get("value"), "2wo");
       assertEquals(col.get(2).get("value"), "3hree");
+    }
+
+    @Ignore @Test public void loadJsonFromFile_with_charset_encoding_options(){
+      assertEquals("TODO", "see JsonLoader.charset in ModelCollection.java");
     }
 
     @Test public void loadJsonFromFile_with_updates(){

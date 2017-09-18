@@ -2,6 +2,7 @@ package com.fuse.cms;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.List;
@@ -295,4 +296,7 @@ public class AsyncFacadeTest {
     assertEquals(facade.getThreadPriority(), (Integer)null);
   }
 
+  @Ignore @Test public void setRecycleActiveOperations(){
+    assertEquals("TODO", "Test AsyncFacade.bRecycleActiveOperations");
+  }
 }

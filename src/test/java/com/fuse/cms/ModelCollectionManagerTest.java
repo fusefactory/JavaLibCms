@@ -2,6 +2,8 @@ package com.fuse.cms;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import org.junit.Ignore;
+
 import com.fuse.utils.Event;
 
 public class ModelCollectionManagerTest{
@@ -23,6 +25,10 @@ public class ModelCollectionManagerTest{
     assertEquals(man.get("books").get(2).get("title"), "Slaughterhouse 5");
     assertEquals(man.get("authors").size(), 1);
     assertEquals(man.get("authors").get(0).get("name"), "Kurt Vonnegut");
+  }
+
+  @Ignore @Test public void loadJsonFromFile_with_charset_encoding_options(){
+    assertEquals("TODO", "see ModelCollectionManagerJsonLoader.charset in ModelCollectionManager.java");
   }
 
   @Test public void loadJsonFromFile_withUpdates(){
