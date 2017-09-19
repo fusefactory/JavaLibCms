@@ -20,7 +20,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private Integer threadPriority = null;
 
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
-    
+
 
     public AsyncFacade(){
         syncLoader = null;
@@ -148,6 +148,42 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         };
     }
 
+    public void setSyncLoaderList(Function<K, List<V>> syncLoader){
+        setSyncLoaderList(syncLoader, true, false);
+    }
+
+    public void setSyncLoaderList(Function<K, List<V>> syncLoader, boolean createThreadedAsyncLoader, boolean createRegularAsyncLoader){
+        this.syncLoader = ((K key) -> {
+        	List<V> result = syncLoader.apply(key);
+        	return (result == null || result.size() < 1) ? null : result.get(0);
+        });
+
+        if(createThreadedAsyncLoader){
+            setThreadedAsyncLoader(convertToAsyncList(syncLoader));
+            return; // don't continue with creating a non-threaded asyncLoader (which would overwrite the threaded async loader)
+        }
+
+        // create loader as non-threaded asyncLoader (maybe caller has already implemented a threading mechanism?)
+        setAsyncLoader(convertToAsyncList(syncLoader));
+    }
+
+    private BiConsumer<K, AsyncOperation<V>> convertToAsyncList(Function<K, List<V>> func){
+        return (K key, AsyncOperation<V> op) -> {
+            // get "result" using sync loader
+            List<V> result = func.apply(key);
+
+            // if result is not null (which should be returned to indicate failure),
+            // add it to our operation's result
+            if(result != null){
+              for(V item : result)
+                op.add(item);
+            }
+
+            // finalize async operation and indicate if it was a success
+            op.finish(result != null);
+        };
+    }
+
     public void setDispatchOnUpdate(boolean value){
         bDispatchOnUpdate = value;
     }
@@ -163,11 +199,11 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     public Integer getThreadPriority(){
         return this.threadPriority;
     }
-    
+
     public boolean getRecycleActiveOperations() {
     	return bRecycleActiveOperations;
     }
-    
+
     public void setRecycleActiveOperations(boolean enable) {
     	bRecycleActiveOperations = enable;
     }
