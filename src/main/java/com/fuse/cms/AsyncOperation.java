@@ -5,22 +5,16 @@ import java.util.ArrayList;
 import java.util.function.Consumer;
 import com.fuse.utils.Event;
 
-public class AsyncOperation<ItemType> {
-    private boolean bInstantDispatch;
-    private boolean bDispatched, bDone, bSuccess, bExecuted;
+public class AsyncOperation<ItemType> extends AsyncOperationBase {
 
-    public Event<AsyncOperation<ItemType>> doneEvent, successEvent, failureEvent, abortEvent, executedEvent, noResultEvent;
+    public Event<AsyncOperation<ItemType>> successEvent, failureEvent, abortEvent, executedEvent, noResultEvent;
     public Event<List<ItemType>> resultEvent;
     public Event<ItemType> singleResultEvent;
 
     public List<ItemType> result;
 
     public AsyncOperation(){
-        bDispatched = false;
-        bDone = false;
-        bSuccess = false;
-        bExecuted = false;
-        doneEvent = new Event<>();
+        super();
         successEvent = new Event<>();
         failureEvent = new Event<>();
         abortEvent = new Event<>();
@@ -29,18 +23,12 @@ public class AsyncOperation<ItemType> {
         resultEvent = new Event<>();
         singleResultEvent = new Event<>();
         result = new ArrayList<>();
-        bInstantDispatch = true;
     }
 
-    public boolean isDone() { return bDone; }
-    public boolean isSuccess() { return bSuccess; }
-    public boolean isFailure() { return bExecuted && !bSuccess; }
-    public boolean isExecuted() { return bExecuted; }
-    public boolean isAborted() { return bDone && !bExecuted; }
     public boolean isNoResult(){ return bDone && result.isEmpty(); }
 
     public AsyncOperation<ItemType> whenDone(Consumer<AsyncOperation<ItemType>> func){
-        doneEvent.addListener(func); if(bDispatched && isDone()) func.accept(this); return this;}
+        doneEvent.addListener((AsyncOperationBase base) -> func.accept(this)); if(bDispatched && isDone()) func.accept(this); return this;}
     public AsyncOperation<ItemType> onSuccess(Consumer<AsyncOperation<ItemType>> func){
         successEvent.addListener(func); if(bDispatched && isSuccess()) func.accept(this); return this; }
     public AsyncOperation<ItemType> onFailure(Consumer<AsyncOperation<ItemType>> func){
@@ -68,15 +56,7 @@ public class AsyncOperation<ItemType> {
         result.add(item);
     }
 
-    public void abort(){
-        bDone = true;
-        bExecuted = false;
-
-        if(bInstantDispatch){
-            dispatch();
-        }
-    }
-
+    @Override
     public void dispatch(){
         bDispatched = true;
 
@@ -102,23 +82,5 @@ public class AsyncOperation<ItemType> {
             for(ItemType item : result)
                 singleResultEvent.trigger(item);
         }
-    }
-
-    public void finish(){
-        finish(true);
-    }
-
-    public void finish(boolean success){
-        bDone = true;
-        bExecuted = true;
-        bSuccess = success;
-
-        if(bInstantDispatch){
-            dispatch();
-        }
-    }
-
-    public void setInstantDispatch(boolean newValue){
-        bInstantDispatch = newValue;
     }
 }
