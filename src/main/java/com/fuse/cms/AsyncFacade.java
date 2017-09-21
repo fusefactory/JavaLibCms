@@ -12,22 +12,19 @@ import com.fuse.utils.Event;
 
 public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
-    private boolean bDispatchOnUpdate;
+    private boolean bDispatchOnUpdate = false;
     private boolean bRecycleActiveOperations = true;
-    private Function<K, V> syncLoader;
+    private Function<K, V> syncLoader = null;
+    private Function<K, List<V>> syncListLoader = null;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
-    private Map<K, AsyncOperation<V>> activeAsyncOperations;
+    private Map<K, AsyncOperation<V>> activeAsyncOperations = null;
     private Integer threadPriority = null;
 
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
 
     public AsyncFacade(){
-        syncLoader = null;
-        asyncLoader = null;
         asyncOperationDoneEvent = new Event<>();
-        bDispatchOnUpdate = false;
-        activeAsyncOperations = null;
     }
 
     public void update(){
@@ -43,9 +40,32 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     }
 
     public V getSync(K key){
-        if(syncLoader == null)
-            return null;
-        return syncLoader.apply(key);
+        if(this.syncLoader != null)
+            return syncLoader.apply(key);
+
+        if(this.syncListLoader != null) {
+        	List<V> list = syncListLoader.apply(key);
+        	return list.get(0);
+        }
+        
+        return null;
+    }
+    
+    public List<V> getSyncList(K key){
+    	List<V> result = new ArrayList<>();
+
+        if(this.syncListLoader != null) {
+        	List<V> list = syncListLoader.apply(key);
+        	if(list != null)
+        		result.addAll(list);
+
+        } else if(this.syncLoader != null) {
+            V item = syncLoader.apply(key);
+            if(item!=null)
+            	result.add(item);
+        }
+
+        return result;
     }
 
     public AsyncOperation<V> getAsync(K key){
@@ -153,6 +173,8 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     }
 
     public void setSyncLoaderList(Function<K, List<V>> syncLoader, boolean createThreadedAsyncLoader, boolean createRegularAsyncLoader){
+    	this.syncListLoader = syncLoader;
+
         this.syncLoader = ((K key) -> {
         	List<V> result = syncLoader.apply(key);
         	return (result == null || result.size() < 1) ? null : result.get(0);
