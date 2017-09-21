@@ -1,10 +1,7 @@
 package com.fuse.cms;
 
-import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.function.Function;
 import java.util.function.BiConsumer;
 
@@ -19,7 +16,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private Map<K, AsyncOperation<V>> activeAsyncOperations;
     private Integer threadPriority = null;
 
-    public Event<AsyncOperation<V>> asyncOperationDoneEvent;
+    public Event<AsyncOperationBase> asyncOperationDoneEvent;
     
 
     public AsyncFacade(){
@@ -66,7 +63,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
         activeAsyncOperations.put(key, op);
 
-        op.doneEvent.addListener((AsyncOperation<V> doneOp) -> {
+        op.doneEvent.addListener((AsyncOperationBase doneOp) -> {
             this.asyncOperationDoneEvent.trigger(doneOp);
             activeAsyncOperations.remove(key);
         });

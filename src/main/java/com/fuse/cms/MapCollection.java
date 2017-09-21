@@ -1,8 +1,6 @@
 package com.fuse.cms;
 
 import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.AbstractMap;
 import java.util.function.Function;
 import java.util.function.BiConsumer;
@@ -21,7 +19,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
     // events
 
-    public Event<AsyncOperation<V>> asyncOperationDoneEvent;
+    public Event<AsyncOperationBase> asyncOperationDoneEvent;
 
     // methods
 
@@ -107,7 +105,7 @@ public class MapCollection<K, V> extends Collection<Map.Entry<K,V>> {
 
         activeAsyncOperations.setForKey(key, op);
 
-        op.doneEvent.addListener((AsyncOperation<V> doneOp) -> {
+        op.doneEvent.addListener((AsyncOperationBase doneOp) -> {
 
             if(this.bAddAsyncLoadedResultsToCollection){
                 for(V item : op.result){
