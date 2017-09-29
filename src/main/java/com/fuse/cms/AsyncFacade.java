@@ -19,7 +19,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     private Map<K, AsyncOperation<V>> activeAsyncOperations = null;
     private Integer threadPriority = null;
 
-    public Event<AsyncOperationBase> asyncOperationDoneEvent;
+    public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
     public AsyncFacade(){
         asyncOperationDoneEvent = new Event<>();
@@ -45,10 +45,10 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         	List<V> list = syncListLoader.apply(key);
         	return list.get(0);
         }
-        
+
         return null;
     }
-    
+
     public List<V> getSyncList(K key){
     	List<V> result = new ArrayList<>();
 
@@ -85,7 +85,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         activeAsyncOperations.put(key, op);
 
         op.doneEvent.addListener((AsyncOperationBase doneOp) -> {
-            this.asyncOperationDoneEvent.trigger(doneOp);
+            this.asyncOperationDoneEvent.trigger((AsyncOperation<V>)doneOp);
             activeAsyncOperations.remove(key);
         });
 

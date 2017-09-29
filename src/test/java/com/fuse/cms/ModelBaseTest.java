@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.ArrayList;
 import com.fuse.cms.ModelBase;
+import com.fuse.utils.Event;
 
 public class ModelBaseTest {
 
@@ -183,5 +184,21 @@ public class ModelBaseTest {
     assertEquals(model.getVec3("pos")[0], 200.0f, 0.000001f);
     assertEquals(model.getVec3("pos")[1], 0.0f, 0.000001f);
     assertEquals(model.getVec3("pos")[2], 10.0f, 0.000001f);
+  }
+
+  @Test public void withInt(){
+    ModelBase m = new ModelBase();
+    Event<Integer> intlog = new Event<>();
+    intlog.enableHistory();
+    m.withInt("number", (Integer no) -> intlog.trigger(no));
+    assertEquals(intlog.getHistory().size(), 0);
+    m.set("number", 4);
+    m.withInt("number", (Integer no) -> intlog.trigger(no));
+    assertEquals(intlog.getHistory().size(), 1);
+    m.set("number", "NaN");
+    m.withInt("number", (Integer no) -> intlog.trigger(no));
+    assertEquals(intlog.getHistory().size(), 2);
+    assertEquals((int)intlog.getHistory().get(0), 4);
+    assertEquals((int)intlog.getHistory().get(1), 0);
   }
 }
