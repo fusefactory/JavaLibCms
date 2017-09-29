@@ -201,4 +201,20 @@ public class ModelBaseTest {
     assertEquals((int)intlog.getHistory().get(0), 4);
     assertEquals((int)intlog.getHistory().get(1), 0);
   }
+
+  @Test public void withFloat(){
+    ModelBase m = new ModelBase();
+    Event<Float> logger = new Event<>();
+    logger.enableHistory();
+    m.withFloat("number", (Float no) -> logger.trigger(no));
+    assertEquals(logger.getHistory().size(), 0);
+    m.set("number", 4);
+    m.withFloat("number", (Float no) -> logger.trigger(no));
+    assertEquals(logger.getHistory().size(), 1);
+    m.set("number", "NaN");
+    m.withFloat("number", (Float no) -> logger.trigger(no));
+    assertEquals(logger.getHistory().size(), 2);
+    assertEquals((float)logger.getHistory().get(0), 4.0f, 0.0000f);
+    assertEquals((float)logger.getHistory().get(1), Float.NaN, 0.000001);
+  }
 }
