@@ -405,6 +405,11 @@ public class Model extends ModelBase {
     return f;
   }
 
+  /** Helper method that hides the somewhat confusing API and terminology of the follow methods */
+  public void merge(ModelBase source){
+    this.follow(source, null, false);
+  }
+
   /**
    * Stop all active follow connections created using calls to this instance's follow methods
    * @return A list of stopped ModelFollower extension instances

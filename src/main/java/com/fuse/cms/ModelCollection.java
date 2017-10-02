@@ -93,21 +93,24 @@ class JsonLoader {
     // loop over all json nodes
     for(int idx=0; idx<json.length(); idx++){
       JSONObject jsonObject = json.getJSONObject(idx);
-      Model model = null;
+      Model model = new Model();
 
-      // try to find existing model for this node
-      if(jsonObject.has(primaryKeyAttributeName)){
-        String jsonId = jsonObject.get(primaryKeyAttributeName).toString();
-        model = this.collection.findByAttr(primaryKeyAttributeName, jsonId);
-      }
-
-      // no model found, create one
-      if(model == null){
-        model = this.collection.create();
-      }
+      // // try to find existing model for this node
+      // if(jsonObject.has(primaryKeyAttributeName)){
+      //   String jsonId = jsonObject.get(primaryKeyAttributeName).toString();
+      //   model = this.collection.findByAttr(primaryKeyAttributeName, jsonId);
+      // }
+      //
+      // // no model found, create one
+      // if(model == null){
+      //   model = this.collection.create();
+      // }
+      //
 
       // load model with json node's data
       allGood &= model.loadJson(jsonObject);
+
+      this.collection.loadModel(model);
     }
 
     // return true if all json nodes were loaded without issues
