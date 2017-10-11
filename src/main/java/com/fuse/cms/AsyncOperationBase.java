@@ -17,12 +17,17 @@ public class AsyncOperationBase {
       doneEvent = new Event<>();
   }
 
+  public AsyncOperationBase(boolean finishResult){
+    this();
+    this.finish(finishResult);
+  }
+
   public boolean isDone() { return bDone; }
   public boolean isSuccess() { return bSuccess; }
   public boolean isFailure() { return bExecuted && !bSuccess; }
   public boolean isExecuted() { return bExecuted; }
   public boolean isAborted() { return bDone && !bExecuted; }
-  
+
   public void abort(){
       bDone = true;
       bExecuted = false;
@@ -35,7 +40,7 @@ public class AsyncOperationBase {
   public void dispatch(){
 	  // "virtual" overriden in AsyncOperation to trigger events
   }
-  
+
   public void finish(){
       finish(true);
   }

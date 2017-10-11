@@ -25,6 +25,11 @@ public class AsyncOperation<ItemType> extends AsyncOperationBase {
         result = new ArrayList<>();
     }
 
+    public AsyncOperation(boolean result){
+      this();
+      this.finish(result);
+    }
+
     public boolean isNoResult(){ return bDone && result.isEmpty(); }
 
     public AsyncOperation<ItemType> whenDone(Consumer<AsyncOperation<ItemType>> func){
