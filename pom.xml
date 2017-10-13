@@ -4,11 +4,11 @@
 
     <groupId>com.github.fusefactory</groupId>
     <artifactId>JavaLibCms</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
     <packaging>jar</packaging>
 
     <name>Fuse CMS package</name>
-    <url>https://jitpack.io/#fusefactory/JavaLibCms/1.1.4</url>
+    <url>https://jitpack.io/#fusefactory/JavaLibCms</url>
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.json/json -->
