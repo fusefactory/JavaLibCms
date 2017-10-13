@@ -2,6 +2,7 @@ package com.fuse.cms;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -145,9 +146,8 @@ public class CollectionBaseTest {
       assertEquals(joined(", "), "2: 3, 1: 3, 0: 3");
     }
 
-    @Test public void beforeAddTest(){
-      strings = new ArrayList<String>();
-      System.out.println("TODO");
+    @Ignore @Test public void beforeAddTest(){
+      assertEquals("TODO", "DONE");
     }
 
     @Test public void findFirst(){

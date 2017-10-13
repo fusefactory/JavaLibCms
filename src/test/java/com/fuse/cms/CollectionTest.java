@@ -109,11 +109,14 @@ public class CollectionTest {
   }
 
   @Test public void filtered(){
+    // setup
     Collection<TmpKlass> col1 = new Collection<TmpKlass>();
     TmpKlass item = new TmpKlass("a");
     col1.add(new TmpKlass("ab"));
     col1.add(new TmpKlass("bc"));
     col1.add(new TmpKlass("cd"));
+
+    // TEST active (default)
     Collection<TmpKlass> col2 = col1.filtered((TmpKlass tmp) -> { return tmp.attr == "bc"; });
     // copied the one matching model
     assertEquals(col2.size(), 1);
@@ -125,6 +128,21 @@ public class CollectionTest {
     assertEquals(col2.size(), 2);
     assertEquals(col1.size(), 4);
     assertEquals(col2.get(1), col1.get(3));
+
+    // TEST inactive
+    Collection<TmpKlass> col3 = new Collection<TmpKlass>();
+    col3.add(new TmpKlass("111"));
+    col3.add(new TmpKlass("222"));
+    assertEquals(col3.beforeAddTest.size(), 0);
+    assertEquals(col3.addEvent.size(), 0);
+    assertEquals(col3.removeEvent.size(), 0);
+    Collection<TmpKlass> col4 = col3.filtered((TmpKlass it) -> { return it.attr.equals("111"); }, false /* inactive */);
+    assertEquals(col3.beforeAddTest.size(), 0);
+    assertEquals(col3.addEvent.size(), 0);
+    assertEquals(col3.removeEvent.size(), 0);
+    assertEquals(col4.size(), 1);
+    col3.add(new TmpKlass("111"));
+    assertEquals(col4.size(), 1);
   }
 
   @Test public void withAll(){
@@ -240,5 +258,30 @@ public class CollectionTest {
     assertEquals(col.beforeAddTest.size(), 0);
     assertEquals(col.size(), 0);
     assertEquals(col.getLimit(), null);
+  }
+
+  @Test public void destroy_when_locked(){
+    Collection<TmpKlass> col = new Collection<>();
+    col.add(new TmpKlass("foo"));
+    col.add(new TmpKlass("bar"));
+    col.addEvent.addListener((TmpKlass t) -> {});
+    col.removeEvent.addListener((TmpKlass t) -> {});
+
+    assertEquals(col.size(), 2);
+    assertEquals(col.addEvent.size(), 1);
+    assertEquals(col.removeEvent.size(), 1);
+
+    List<String> dummyList = new ArrayList<>();
+
+    col.each((TmpKlass t) -> {
+      dummyList.add("");
+      col.destroy();
+      dummyList.add("");
+    });
+
+    assertEquals(col.size(), 0);
+    assertEquals(dummyList.size(), 4);
+    assertEquals(col.addEvent.size(), 0);
+    assertEquals(col.removeEvent.size(), 0);
   }
 }

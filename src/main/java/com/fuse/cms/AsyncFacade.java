@@ -1,10 +1,9 @@
 package com.fuse.cms;
 
-import java.util.Set;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.function.Function;
 import java.util.function.BiConsumer;
 
@@ -12,19 +11,18 @@ import com.fuse.utils.Event;
 
 public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
-    private boolean bDispatchOnUpdate;
-    private Function<K, V> syncLoader;
+    private boolean bDispatchOnUpdate = false;
+    private boolean bRecycleActiveOperations = true;
+    private Function<K, V> syncLoader = null;
+    private Function<K, List<V>> syncListLoader = null;
     private BiConsumer<K, AsyncOperation<V>> asyncLoader;
-    private Map<K, AsyncOperation<V>> activeAsyncOperations;
+    private Map<K, AsyncOperation<V>> activeAsyncOperations = null;
     private Integer threadPriority = null;
+
     public Event<AsyncOperation<V>> asyncOperationDoneEvent;
 
     public AsyncFacade(){
-        syncLoader = null;
-        asyncLoader = null;
         asyncOperationDoneEvent = new Event<>();
-        bDispatchOnUpdate = false;
-        activeAsyncOperations = null;
     }
 
     public void update(){
@@ -40,14 +38,37 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
     }
 
     public V getSync(K key){
-        if(syncLoader == null)
-            return null;
-        return syncLoader.apply(key);
+        if(this.syncLoader != null)
+            return syncLoader.apply(key);
+
+        if(this.syncListLoader != null) {
+        	List<V> list = syncListLoader.apply(key);
+        	return list.get(0);
+        }
+
+        return null;
+    }
+
+    public List<V> getSyncList(K key){
+    	List<V> result = new ArrayList<>();
+
+        if(this.syncListLoader != null) {
+        	List<V> list = syncListLoader.apply(key);
+        	if(list != null)
+        		result.addAll(list);
+
+        } else if(this.syncLoader != null) {
+            V item = syncLoader.apply(key);
+            if(item!=null)
+            	result.add(item);
+        }
+
+        return result;
     }
 
     public AsyncOperation<V> getAsync(K key){
         // first see if there are any active asyncoperations for the same key
-        if(activeAsyncOperations != null && activeAsyncOperations.containsKey(key))
+        if(bRecycleActiveOperations && activeAsyncOperations != null && activeAsyncOperations.containsKey(key))
             return activeAsyncOperations.get(key);
 
         AsyncOperation<V> op;
@@ -63,8 +84,8 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
         activeAsyncOperations.put(key, op);
 
-        op.doneEvent.addListener((AsyncOperation<V> doneOp) -> {
-            this.asyncOperationDoneEvent.trigger(doneOp);
+        op.doneEvent.addListener((AsyncOperationBase doneOp) -> {
+            this.asyncOperationDoneEvent.trigger((AsyncOperation<V>)doneOp);
             activeAsyncOperations.remove(key);
         });
 
@@ -145,6 +166,44 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         };
     }
 
+    public void setSyncLoaderList(Function<K, List<V>> syncLoader){
+        setSyncLoaderList(syncLoader, true, false);
+    }
+
+    public void setSyncLoaderList(Function<K, List<V>> syncLoader, boolean createThreadedAsyncLoader, boolean createRegularAsyncLoader){
+    	this.syncListLoader = syncLoader;
+
+        this.syncLoader = ((K key) -> {
+        	List<V> result = syncLoader.apply(key);
+        	return (result == null || result.size() < 1) ? null : result.get(0);
+        });
+
+        if(createThreadedAsyncLoader){
+            setThreadedAsyncLoader(convertToAsyncList(syncLoader));
+            return; // don't continue with creating a non-threaded asyncLoader (which would overwrite the threaded async loader)
+        }
+
+        // create loader as non-threaded asyncLoader (maybe caller has already implemented a threading mechanism?)
+        setAsyncLoader(convertToAsyncList(syncLoader));
+    }
+
+    private BiConsumer<K, AsyncOperation<V>> convertToAsyncList(Function<K, List<V>> func){
+        return (K key, AsyncOperation<V> op) -> {
+            // get "result" using sync loader
+            List<V> result = func.apply(key);
+
+            // if result is not null (which should be returned to indicate failure),
+            // add it to our operation's result
+            if(result != null){
+              for(V item : result)
+                op.add(item);
+            }
+
+            // finalize async operation and indicate if it was a success
+            op.finish(result != null);
+        };
+    }
+
     public void setDispatchOnUpdate(boolean value){
         bDispatchOnUpdate = value;
     }
@@ -159,5 +218,13 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
 
     public Integer getThreadPriority(){
         return this.threadPriority;
+    }
+
+    public boolean getRecycleActiveOperations() {
+    	return bRecycleActiveOperations;
+    }
+
+    public void setRecycleActiveOperations(boolean enable) {
+    	bRecycleActiveOperations = enable;
     }
 };

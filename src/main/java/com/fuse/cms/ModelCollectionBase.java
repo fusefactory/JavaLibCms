@@ -57,4 +57,29 @@ public class ModelCollectionBase extends Collection<Model> {
       return (value == null && modelValue == null) || ((value != null) && value.equals(modelValue));
     });
   }
+
+  /** checks for existing model with same the primary attribute */
+  public void loadModel(Model m){
+    String primaryKeyAttributeName = "id"; // TODO: make instance var and configurable
+    Model existing = null;
+
+    // try to find existing model for this node
+    if(m.has(primaryKeyAttributeName)){
+      String _id = m.get(primaryKeyAttributeName);
+      existing = this.findByAttr(primaryKeyAttributeName, _id);
+    }
+
+    if(existing == null){
+      //this.add(m); // no existing model with same ID, simply add the model to our collection
+      // use create, not add, otherwise StateTest fails
+      existing = this.create();
+    }
+
+    existing.merge(m);
+  }
+
+  public void loadCollection(ModelCollectionBase col){
+    for(Model m : col)
+      this.loadModel(m);
+  }
 }

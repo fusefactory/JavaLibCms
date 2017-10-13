@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.util.List;
 import java.util.ArrayList;
 import com.fuse.cms.ModelBase;
+import com.fuse.utils.Event;
 
 public class ModelBaseTest {
 
@@ -183,5 +184,37 @@ public class ModelBaseTest {
     assertEquals(model.getVec3("pos")[0], 200.0f, 0.000001f);
     assertEquals(model.getVec3("pos")[1], 0.0f, 0.000001f);
     assertEquals(model.getVec3("pos")[2], 10.0f, 0.000001f);
+  }
+
+  @Test public void withInt(){
+    ModelBase m = new ModelBase();
+    Event<Integer> intlog = new Event<>();
+    intlog.enableHistory();
+    m.withInt("number", (Integer no) -> intlog.trigger(no));
+    assertEquals(intlog.getHistory().size(), 0);
+    m.set("number", 4);
+    m.withInt("number", (Integer no) -> intlog.trigger(no));
+    assertEquals(intlog.getHistory().size(), 1);
+    m.set("number", "NaN");
+    m.withInt("number", (Integer no) -> intlog.trigger(no));
+    assertEquals(intlog.getHistory().size(), 2);
+    assertEquals((int)intlog.getHistory().get(0), 4);
+    assertEquals((int)intlog.getHistory().get(1), 0);
+  }
+
+  @Test public void withFloat(){
+    ModelBase m = new ModelBase();
+    Event<Float> logger = new Event<>();
+    logger.enableHistory();
+    m.withFloat("number", (Float no) -> logger.trigger(no));
+    assertEquals(logger.getHistory().size(), 0);
+    m.set("number", 4);
+    m.withFloat("number", (Float no) -> logger.trigger(no));
+    assertEquals(logger.getHistory().size(), 1);
+    m.set("number", "NaN");
+    m.withFloat("number", (Float no) -> logger.trigger(no));
+    assertEquals(logger.getHistory().size(), 2);
+    assertEquals((float)logger.getHistory().get(0), 4.0f, 0.0000f);
+    assertEquals((float)logger.getHistory().get(1), Float.NaN, 0.000001);
   }
 }

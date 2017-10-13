@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.lang.Runnable;
 import java.lang.reflect.Array;
+import java.util.function.Consumer;
 import java.util.function.BiConsumer;
 
 import com.fuse.utils.Event;
@@ -196,6 +197,13 @@ public class ModelBase {
     }
     return defaultValue;
   }
+
+  public void with(String attr, Consumer<String> func){ if(this.has(attr)) func.accept(this.get(attr)); }
+  public void withInt(String attr, Consumer<Integer> func){ if(this.has(attr)) func.accept(this.getInt(attr)); }
+  public void withFloat(String attr, Consumer<Float> func){ if(this.has(attr)) func.accept(this.getFloat(attr)); }
+  public void withLong(String attr, Consumer<Long> func){ if(this.has(attr)) func.accept(this.getLong(attr)); }
+  public void withBool(String attr, Consumer<Boolean> func){ if(this.has(attr)) func.accept(this.getBool(attr)); }
+
 
   public void set(String attr, float value){
     set(attr, Float.toString(value));

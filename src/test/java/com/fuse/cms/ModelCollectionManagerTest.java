@@ -1,87 +1,72 @@
 package com.fuse.cms;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.junit.Ignore;
 
-import java.util.List;
-import java.util.ArrayList;
+import com.fuse.utils.Event;
 
-public class ModelCollectionManagerTest extends TestCase {
-  public ModelCollectionManagerTest( String testName ){ super( testName ); }
-  public static Test suite(){ return new TestSuite( ModelCollectionManagerTest.class ); }
-
-  // private List<String> strings;
-  String result;
-
+public class ModelCollectionManagerTest{
   // main routine invoked by test runner
-  public void testApp(){
-    { _("get(<name>, <create-if-not-exist>)");
-      ModelCollectionManager man = new ModelCollectionManager();
-      assertEquals(man.get("foo"), null);
-      assertEquals(man.get("foobar", true) == null, false);
-    }
-
-    { _("loadJsonFromFile");
-      ModelCollectionManager man = new ModelCollectionManager();
-      assertEquals(man.size(), 0);
-      assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-loadJsonFromFile.json"), true);
-      assertEquals(man.size(), 2);
-      assertEquals(man.get("books").size(), 3);
-      assertEquals(man.get("books").get(0).get("title"), "Breakfast of Champions");
-      assertEquals(man.get("books").get(1).get("title"), "Cat's Cradle");
-      assertEquals(man.get("books").get(2).get("title"), "Slaughterhouse 5");
-      assertEquals(man.get("authors").size(), 1);
-      assertEquals(man.get("authors").get(0).get("name"), "Kurt Vonnegut");
-    }
-
-    { _("loadJsonFromFile with updates");
-      ModelCollectionManager man = new ModelCollectionManager();
-      assertEquals(man.size(), 0);
-      assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-loadJsonFromFile.json"), true);
-      assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-loadJsonFromFile.json"), true);
-      assertEquals(man.size(), 2);
-      assertEquals(man.get("books").size(), 3);
-      assertEquals(man.get("books").get(0).get("title"), "Breakfast of Champions");
-      assertEquals(man.get("books").get(1).get("title"), "Cat's Cradle");
-      assertEquals(man.get("books").get(2).get("title"), "Slaughterhouse 5");
-      assertEquals(man.get("authors").size(), 1);
-      assertEquals(man.get("authors").get(0).get("name"), "Kurt Vonnegut");
-    }
-
-    { _("reload-transform");
-      ModelCollectionManager man = new ModelCollectionManager();
-      assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-reload-transform1.json"), true);
-      Model m = man.get("products").get(0);
-      assertEquals(m.get("title"), "Product 1");
-      result = "";
-      m.transformAttribute("title", (String newValue) -> {
-        result = newValue;
-      });
-      assertEquals(result, "Product 1");
-      assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-reload-transform2.json"), true);
-      assertEquals(m.get("title"), "Item 1");
-      assertEquals(result, "Item 1");
-    }
+  @Test public void get(){
+    ModelCollectionManager man = new ModelCollectionManager();
+    assertEquals(man.get("foo"), null);
+    assertEquals(man.get("foobar", true) == null, false);
   }
 
-  // private String joined(){
-  //   return joined("");
-  // }
-  //
-  // private String joined(String separator){
-  //   String result = "";
-  //
-  //   for(int i=1; i<strings.size(); i++)
-  //     result += separator + strings.get(i);
-  //
-  //   if(strings.size() > 0)
-  //     result = strings.get(0) + result;
-  //
-  //   return result;
-  // }
+  @Test public void loadJsonFromFile(){
+    ModelCollectionManager man = new ModelCollectionManager();
+    assertEquals(man.size(), 0);
+    assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-loadJsonFromFile.json"), true);
+    assertEquals(man.size(), 2);
+    assertEquals(man.get("books").size(), 3);
+    assertEquals(man.get("books").get(0).get("title"), "Breakfast of Champions");
+    assertEquals(man.get("books").get(1).get("title"), "Cat's Cradle");
+    assertEquals(man.get("books").get(2).get("title"), "Slaughterhouse 5");
+    assertEquals(man.get("authors").size(), 1);
+    assertEquals(man.get("authors").get(0).get("name"), "Kurt Vonnegut");
+  }
 
-  private void _(String name){
-    System.out.println("TEST: "+name);
+  @Ignore @Test public void loadJsonFromFile_with_charset_encoding_options(){
+    assertEquals("TODO", "see ModelCollectionManagerJsonLoader.charset in ModelCollectionManager.java");
+  }
+
+  @Test public void loadJsonFromFile_withUpdates(){
+    ModelCollectionManager man = new ModelCollectionManager();
+    assertEquals(man.size(), 0);
+    assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-loadJsonFromFile.json"), true);
+    assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-loadJsonFromFile.json"), true);
+    assertEquals(man.size(), 2);
+    assertEquals(man.get("books").size(), 3);
+    assertEquals(man.get("books").get(0).get("title"), "Breakfast of Champions");
+    assertEquals(man.get("books").get(1).get("title"), "Cat's Cradle");
+    assertEquals(man.get("books").get(2).get("title"), "Slaughterhouse 5");
+    assertEquals(man.get("authors").size(), 1);
+    assertEquals(man.get("authors").get(0).get("name"), "Kurt Vonnegut");
+  }
+
+  @Test public void reload_transform(){
+    ModelCollectionManager man = new ModelCollectionManager();
+    assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-reload-transform1.json"), true);
+    Model m = man.get("products").get(0);
+    assertEquals(m.get("title"), "Product 1");
+
+    Event<String> evt = new Event<>();
+    evt.enableHistory();
+
+    m.transformAttribute("title", (String newValue) -> {
+      evt.trigger(newValue);
+    });
+
+    // verify the attributetransformer ran with initial value
+    assertEquals(evt.getHistory().get(0), "Product 1");
+    assertEquals(evt.getHistory().size(), 1);
+    // reload same data file; no changes
+    assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-reload-transform1.json"), true);
+    assertEquals(evt.getHistory().size(), 1);
+    // (re-)load from another file with updates to the existing model, verify attribute transformer ran in response to the update
+    assertEquals(man.loadJsonFromFile("testdata/ModelCollectionManagerTest-reload-transform2.json"), true);
+    assertEquals(evt.getHistory().get(1), "Item 1");
+    assertEquals(evt.getHistory().size(), 2);
   }
 }

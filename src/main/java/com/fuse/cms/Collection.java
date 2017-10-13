@@ -124,6 +124,11 @@ class CollectionFilter<T> {
     // register listener for items that get added later
     this.collection.beforeAddTest.addListener(filterFunc, this);
   }
+
+  public void removeFilter(Predicate<T> filterFunc){
+    this.collection.beforeAddTest.removeListener(filterFunc);
+    filterFuncs.remove(filterFunc);
+  }
 };
 
 class CollectionSyncer<T> {
@@ -207,6 +212,10 @@ class CollectionSyncer<T> {
     stoppedSources.add(col);
     col.addEvent.removeListeners(this);
     col.removeEvent.removeListeners(this);
+  }
+
+  public int size(){
+    return activeSources.size() + stoppedSources.size();
   }
 }
 
@@ -348,10 +357,18 @@ public class Collection<T> extends CollectionBase<T> {
    * @return CollectionFilter Returns the created CollectionFilter instance (which could then be stopped/started by the caller)
    */
   public CollectionFilter<T> accept(Predicate<T> func){
+    return this.accept(func, true);
+  }
+
+  public CollectionFilter<T> accept(Predicate<T> func, boolean active){
     if(colFilter == null)
       colFilter = new CollectionFilter<T>(this);
 
     colFilter.addFilter(func);
+
+    if(!active)
+      colFilter.removeFilter(func);
+
     return colFilter;
   }
 
@@ -399,8 +416,8 @@ public class Collection<T> extends CollectionBase<T> {
    */
   public Collection<T> filtered(Predicate<T> func, boolean active){
     Collection<T> newCol = new Collection<T>();
-    newCol.accept(func);
     newCol.sync(this, active);
+    newCol.accept(func, active); // accept AFTER sync, otherwise if active = false, it will just be a sync
     return newCol;
   }
 
