@@ -34,22 +34,32 @@ public class AsyncOperation<ItemType> extends AsyncOperationBase {
 
     public AsyncOperation<ItemType> whenDone(Consumer<AsyncOperation<ItemType>> func){
         doneEvent.addListener((AsyncOperationBase base) -> func.accept(this)); if(bDispatched && isDone()) func.accept(this); return this;}
+    public AsyncOperation<ItemType> whenDone(Runnable func){
+        doneEvent.whenTriggered(func); if(bDispatched && isDone()) func.run(); return this;}
+
     public AsyncOperation<ItemType> onSuccess(Consumer<AsyncOperation<ItemType>> func){
         successEvent.addListener(func); if(bDispatched && isSuccess()) func.accept(this); return this; }
     public AsyncOperation<ItemType> onSuccess(Runnable func){
         successEvent.whenTriggered(func); if(bDispatched && isSuccess()) func.run(); return this; }
+
     public AsyncOperation<ItemType> onFailure(Consumer<AsyncOperation<ItemType>> func){
         failureEvent.addListener(func); if(bDispatched && isFailure()) func.accept(this); return this; }
+    public AsyncOperation<ItemType> onFailure(Runnable func){
+        failureEvent.whenTriggered(func); if(bDispatched && isFailure()) func.run(); return this; }
+
     public AsyncOperation<ItemType> whenAborted(Consumer<AsyncOperation<ItemType>> func){
         abortEvent.addListener(func); if(bDispatched && isAborted()) func.accept(this); return this; }
+
     public AsyncOperation<ItemType> whenExecuted(Consumer<AsyncOperation<ItemType>> func){
         executedEvent.addListener(func); if(bDispatched && isExecuted()) func.accept(this); return this; }
-    public AsyncOperation<ItemType> withResult(Consumer<List<ItemType>> func){
-        resultEvent.addListener(func); if(bDispatched && isDone()) func.accept(this.result); return this; }
+
     public AsyncOperation<ItemType> whenNoResult(Consumer<AsyncOperation<ItemType>> func){
         noResultEvent.addListener(func); if(isNoResult()) func.accept(this); return this; }
     public AsyncOperation<ItemType> whenNoResult(Runnable func){
         noResultEvent.whenTriggered(func); if(isNoResult()) func.run(); return this; }
+
+    public AsyncOperation<ItemType> withResult(Consumer<List<ItemType>> func){
+        resultEvent.addListener(func); if(bDispatched && isDone()) func.accept(this.result); return this; }
 
     public AsyncOperation<ItemType> withSingleResult(Consumer<ItemType> func){
         singleResultEvent.addListener(func);
