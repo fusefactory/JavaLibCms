@@ -22,6 +22,9 @@ public class AsyncOperationBase {
     this.finish(finishResult);
   }
 
+  public AsyncOperationBase after(Runnable func){
+    doneEvent.whenTriggered(func); if(bDispatched && isDone()) func.run(); return this;}
+
   public boolean isDone() { return bDone; }
   public boolean isSuccess() { return bSuccess; }
   public boolean isFailure() { return bExecuted && !bSuccess; }
