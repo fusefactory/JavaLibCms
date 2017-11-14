@@ -110,5 +110,16 @@ public class AsyncQueueTest {
     assertEquals(e.getHistory().get(1), "2");
     assertEquals(e.getHistory().get(2), "3");
     assertEquals(e.getHistory().size(), 3);
+
+    q.add(() -> {
+      e.trigger("4");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    });
+
+    assertEquals(q.size(), 0);
+    assertEquals(e.getHistory().size(), 4);
+    assertEquals(e.getHistory().get(3), "4");
   }
 }

@@ -50,6 +50,9 @@ public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
       it = tmp.poll();
     }
 
+    if(!this.bDispatchOnUpdate) // we'll just run update ourselves
+      this.update();
+
     return result;
   }
 
