@@ -95,4 +95,17 @@ public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
 
     return result;
   }
+
+  public boolean remove(Supplier<AsyncOperationBase> func){
+    Item item = null;
+
+    for(Item it : this){
+      if(it.func == func) {
+        item = it;
+        break;
+      }
+    }
+
+    return (item != null) ? this.remove(item) : false;
+  }
 }

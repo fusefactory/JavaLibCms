@@ -4,10 +4,9 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.Ignore;
 
-import com.fuse.utils.Event;
+import java.util.function.Supplier;
 import java.util.concurrent.CompletableFuture;
-import java.util.List;
-import java.util.ArrayList;
+import com.fuse.utils.Event;
 
 public class AsyncQueueTest {
   @Test public void size(){
@@ -59,5 +58,21 @@ public class AsyncQueueTest {
     assertEquals(q.size(), 1);
     q.update();
     assertEquals(q.size(), 0);
+  }
+
+  @Test public void remove(){
+    AsyncQueue q = new AsyncQueue();
+    Supplier<AsyncOperationBase> f1 = () -> new AsyncOperationBase(false);
+    Supplier<AsyncOperationBase> f2 = () -> new AsyncOperationBase(false);
+    q.add(f1);
+    q.add(f2);
+    q.add(() -> new AsyncOperationBase(false));
+    assertEquals(q.size(), 3);
+    assertEquals(q.remove(f1), true);
+    assertEquals(q.size(), 2);
+    assertEquals(q.remove(f1), false);
+    assertEquals(q.size(), 2);
+    assertEquals(q.remove(f2), true);
+    assertEquals(q.size(), 1);
   }
 }
