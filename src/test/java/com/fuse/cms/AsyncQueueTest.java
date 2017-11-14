@@ -188,4 +188,13 @@ public class AsyncQueueTest {
     assertEquals(e.getHistory().get(1), "1");
     assertEquals(e.getHistory().get(2), "3");
   }
+
+  @Test public void addFailure(){
+    AsyncQueue q = new AsyncQueue();
+    q.setDispatchOnUpdate(false);
+    q.add(() -> AsyncOperationBase.failure());
+    q.add(() -> null);
+    q.add(() -> AsyncOperationBase.failure());
+    assertEquals(q.size(), 0);
+  }
 }

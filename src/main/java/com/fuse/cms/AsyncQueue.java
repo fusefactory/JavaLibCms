@@ -100,9 +100,10 @@ public class AsyncQueue extends ConcurrentLinkedDeque<Item> {
     // an operation currently active?
     if(this.activeOperation != null) {
       // current active operation done?
-      if(this.activeOperation.isDone())
+      if(this.activeOperation.isDone()) {
         // cleanup
         this.activeOperation = null;
+      }
     }
 
     return this.startNext();
@@ -129,11 +130,8 @@ public class AsyncQueue extends ConcurrentLinkedDeque<Item> {
       // lazy-initialize our onFinish callback
       if(this.startNextCallback == null) {
         this.startNextCallback = () -> {
-          this.activeOperation = null;
-
-          // check if the queue hasn't been changed to dispatch-on-update in the mean time
           if(!this.bDispatchOnUpdate)
-            this.startNext();
+            this.update();
         };
       }
 
@@ -144,7 +142,6 @@ public class AsyncQueue extends ConcurrentLinkedDeque<Item> {
          this.startNext();
     }
   }
-
 
   private boolean startNext(){
     boolean result = false;
@@ -157,13 +154,16 @@ public class AsyncQueue extends ConcurrentLinkedDeque<Item> {
       if(item != null) {
         // func.get() executes the logic that provides an AsyncOperation
         this.activeOperation = item.func.get();
-        if(!this.bDispatchOnUpdate) {
-          this.activeOperation.after(this.startNextCallback);
+
+        if(this.activeOperation != null){
+          if(!this.bDispatchOnUpdate) {
+            this.activeOperation.after(this.startNextCallback);
+          }
+
+          this.startEvent.trigger(item);
+
+          result = true;
         }
-
-        this.startEvent.trigger(item);
-
-        result = true;
       }
     }
 
