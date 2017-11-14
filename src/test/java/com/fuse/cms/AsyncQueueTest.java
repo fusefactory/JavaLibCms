@@ -75,4 +75,40 @@ public class AsyncQueueTest {
     assertEquals(q.remove(f2), true);
     assertEquals(q.size(), 1);
   }
+
+  @Test public void setDispatchOnUpdate(){
+    AsyncQueue q = new AsyncQueue();
+    Event<String> e = new Event<>();
+    e.enableHistory();
+
+    q.add(() -> {
+      e.trigger("1");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    });
+
+    q.add(() -> {
+      e.trigger("2");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    });
+
+    q.add(() -> {
+      e.trigger("3");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    });
+
+    assertEquals(q.size(), 3);
+    assertEquals(e.getHistory().size(), 0);
+    q.setDispatchOnUpdate(false);
+    assertEquals(q.size(), 0);
+    assertEquals(e.getHistory().get(0), "1");
+    assertEquals(e.getHistory().get(1), "2");
+    assertEquals(e.getHistory().get(2), "3");
+    assertEquals(e.getHistory().size(), 3);
+  }
 }

@@ -20,7 +20,11 @@ class Item {
 
 public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
 
+  private boolean bDispatchOnUpdate = true;
   private AsyncOperationBase activeOperation = null;
+  private Runnable startNextCallback = null;
+
+  public Event<Item> startEvent = new Event<>();
 
   @Override public boolean add(Item item){
     // cope all our items into a temporary queue
@@ -71,8 +75,6 @@ public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
    * @return true when a new item was initiated.
    */
   public boolean update(){
-    boolean result = false;
-
     // an operation currently active?
     if(this.activeOperation != null) {
       // current active operation done?
@@ -81,19 +83,7 @@ public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
         this.activeOperation = null;
     }
 
-    // no current active operation; initiate next queued operation (if any)
-    while(this.activeOperation == null && !this.isEmpty()) {
-      // look for next queued operation
-      Item item = this.poll();
-
-      if(item != null) {
-        // func.get() executes the logic that provides an AsyncOperation and returns it to us
-        this.activeOperation = item.func.get();
-        result = true;
-      }
-    }
-
-    return result;
+    return this.startNext();
   }
 
   public boolean remove(Supplier<AsyncOperationBase> func){
@@ -107,5 +97,54 @@ public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
     }
 
     return (item != null) ? this.remove(item) : false;
+  }
+
+  public void setDispatchOnUpdate(boolean dispatchOnUpdate){
+    boolean change = (dispatchOnUpdate != this.bDispatchOnUpdate);
+    this.bDispatchOnUpdate = dispatchOnUpdate;
+
+    if(change && !this.bDispatchOnUpdate){
+      // lazy-initialize our onFinish callback
+      if(this.startNextCallback == null) {
+        this.startNextCallback = () -> {
+          this.activeOperation = null;
+
+          // check if the queue hasn't been changed to dispatch-on-update in the mean time
+          if(!this.bDispatchOnUpdate)
+            this.startNext();
+        };
+      }
+
+      // if there is a currently active operation, register our onFinish callback on it
+      if(this.activeOperation != null)
+        this.activeOperation.after(this.startNextCallback);
+      else
+         this.startNext();
+    }
+  }
+
+
+  private boolean startNext(){
+    boolean result = false;
+
+    // no current active operation; initiate next queued operation (if any)
+    while(this.activeOperation == null && !this.isEmpty()) {
+      // look for next queued operation
+      Item item = this.poll();
+
+      if(item != null) {
+        // func.get() executes the logic that provides an AsyncOperation
+        this.activeOperation = item.func.get();
+        if(!this.bDispatchOnUpdate) {
+          this.activeOperation.after(this.startNextCallback);
+        }
+
+        this.startEvent.trigger(item);
+
+        result = true;
+      }
+    }
+
+    return result;
   }
 }

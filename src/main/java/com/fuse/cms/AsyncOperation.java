@@ -75,7 +75,7 @@ public class AsyncOperation<ItemType> extends AsyncOperationBase {
 
     @Override
     public void dispatch(){
-        bDispatched = true;
+        super.dispatch();
 
         if(isAborted())
             abortEvent.trigger(this);
@@ -90,7 +90,6 @@ public class AsyncOperation<ItemType> extends AsyncOperationBase {
             failureEvent.trigger(this);
 
         if(isDone()){
-            doneEvent.trigger(this);
             resultEvent.trigger(this.result);
 
             if(result.isEmpty())
