@@ -122,4 +122,70 @@ public class AsyncQueueTest {
     assertEquals(e.getHistory().size(), 4);
     assertEquals(e.getHistory().get(3), "4");
   }
+
+  @Test public void addFirst(){
+    AsyncQueue q = new AsyncQueue();
+    Event<String> e = new Event<>();
+    e.enableHistory();
+
+    q.add(() -> {
+      e.trigger("1");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    });
+
+    q.add(() -> {
+      e.trigger("2");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    }, 100);
+
+    q.addFirst(() -> {
+      e.trigger("3");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    });
+
+    q.setDispatchOnUpdate(false); // executes all
+    assertEquals(q.size(), 0); // executed
+    assertEquals(e.getHistory().get(0), "3");
+    assertEquals(e.getHistory().get(1), "2");
+    assertEquals(e.getHistory().get(2), "1");
+  }
+
+  @Test public void addLast(){
+    AsyncQueue q = new AsyncQueue();
+    Event<String> e = new Event<>();
+    e.enableHistory();
+
+    q.add(() -> {
+      e.trigger("1");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    }, -100);
+
+    q.add(() -> {
+      e.trigger("2");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    }, 100);
+
+    q.addLast(() -> {
+      e.trigger("3");
+      AsyncOperationBase op = new AsyncOperationBase(false);
+      op.dispatch();
+      return op;
+    });
+
+    q.setDispatchOnUpdate(false); // executes all
+    assertEquals(q.size(), 0); // executed
+    assertEquals(e.getHistory().get(0), "2");
+    assertEquals(e.getHistory().get(1), "1");
+    assertEquals(e.getHistory().get(2), "3");
+  }
 }

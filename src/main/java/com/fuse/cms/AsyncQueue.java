@@ -1,7 +1,7 @@
 package com.fuse.cms;
 
 import java.util.function.Supplier;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import com.fuse.utils.Event;
 
 class Item {
@@ -18,7 +18,7 @@ class Item {
   }
 }
 
-public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
+public class AsyncQueue extends ConcurrentLinkedDeque<Item> {
 
   private boolean bDispatchOnUpdate = true;
   private AsyncOperationBase activeOperation = null;
@@ -26,9 +26,14 @@ public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
 
   public Event<Item> startEvent = new Event<>();
 
+  public void destroy(){
+    this.clear();
+    this.startEvent.destroy();
+  }
+
   @Override public boolean add(Item item){
     // cope all our items into a temporary queue
-    ConcurrentLinkedQueue<Item> tmp = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedDeque<Item> tmp = new ConcurrentLinkedDeque<>();
     tmp.addAll(this);
     this.clear();
 
@@ -71,6 +76,20 @@ public class AsyncQueue extends ConcurrentLinkedQueue<Item> {
    */
   public boolean add(Supplier<AsyncOperationBase> func, float priority){
     return this.add(new Item(func, priority));
+  }
+
+  public boolean addFirst(Supplier<AsyncOperationBase> func){
+    Item it = this.peek();
+    if(it != null)
+      return this.add(func, it.priority+1);
+    return this.add(func);
+  }
+
+  public boolean addLast(Supplier<AsyncOperationBase> func){
+    Item it = this.peekLast();
+    if(it != null)
+      return this.add(func, it.priority-1);
+    return this.add(func);
   }
 
   /**

@@ -62,4 +62,10 @@ public class AsyncOperationBase {
   public void setInstantDispatch(boolean newValue){
       bInstantDispatch = newValue;
   }
+
+  // static factory methods
+
+  public static AsyncOperationBase failure(){
+    return new AsyncOperationBase(false);
+  }
 }
