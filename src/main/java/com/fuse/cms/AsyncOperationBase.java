@@ -66,6 +66,8 @@ public class AsyncOperationBase {
   // static factory methods
 
   public static AsyncOperationBase failure(){
-    return new AsyncOperationBase(false);
+    AsyncOperationBase op = new AsyncOperationBase(false);
+    op.dispatch();
+    return op;
   }
 }
