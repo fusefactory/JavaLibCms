@@ -45,14 +45,14 @@ public class ModelBaseTest {
       assertEquals(m.size(), 4);
       assertEquals(m.attributeChangeEvent.getHistory().size(), 4);
       assertEquals(m.changeEvent.getHistory().size(), 4);
-      assertEquals(m.attributeChangeEvent.size(), 1);
-      assertEquals(m.changeEvent.size(), 1);
+      assertEquals(m.attributeChangeEvent.size(), 2);
+      assertEquals(m.changeEvent.size(), 2);
 
       m.destroy();
 
       assertEquals(m.size(), 0);
-      assertEquals(m.attributeChangeEvent.getHistory(), null);
-      assertEquals(m.changeEvent.getHistory(), null);
+      assertEquals(m.attributeChangeEvent.getHistory().size(),0);
+      assertEquals(m.changeEvent.getHistory().size(), 0);
       assertEquals(m.attributeChangeEvent.size(), 0);
       assertEquals(m.changeEvent.size(), 0);
   }
