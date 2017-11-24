@@ -22,6 +22,9 @@ public class AsyncOperationBase {
     this.finish(finishResult);
   }
 
+  public AsyncOperationBase after(Runnable func){
+    doneEvent.whenTriggered(func); if(bDispatched && isDone()) func.run(); return this; }
+
   public boolean isDone() { return bDone; }
   public boolean isSuccess() { return bSuccess; }
   public boolean isFailure() { return bExecuted && !bSuccess; }
@@ -38,7 +41,8 @@ public class AsyncOperationBase {
   }
 
   public void dispatch(){
-	  // "virtual" overriden in AsyncOperation to trigger events
+    bDispatched = true;
+    this.doneEvent.trigger(this);
   }
 
   public void finish(){
@@ -57,5 +61,13 @@ public class AsyncOperationBase {
 
   public void setInstantDispatch(boolean newValue){
       bInstantDispatch = newValue;
+  }
+
+  // static factory methods
+
+  public static AsyncOperationBase failure(){
+    AsyncOperationBase op = new AsyncOperationBase(false);
+    op.dispatch();
+    return op;
   }
 }
