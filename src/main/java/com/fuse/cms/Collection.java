@@ -4,6 +4,7 @@ import java.util.logging.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.function.*;
+import java.nio.file.*;
 
 class CollectionExtension<T> {
   private CollectionBase<T> collection;
@@ -338,6 +339,14 @@ public class Collection<T> extends CollectionBase<T> {
   /// virtual method, currently only implemented in ModelCollection
   public boolean loadJsonFromFile(String filePath){
     return false;
+  }
+
+  public boolean loadJsonFromFile(String filePath, boolean checkIfFileExists) {
+    if (checkIfFileExists && !Files.isReadable(Paths.get(filePath))) {
+      return false;
+    }
+
+    return this.loadJsonFromFile(filePath);
   }
 
   // public Collection(){
