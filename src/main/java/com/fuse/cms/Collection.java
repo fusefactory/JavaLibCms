@@ -1,10 +1,12 @@
 package com.fuse.cms;
 
-import java.util.logging.*;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.function.*;
-import java.nio.file.*;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 class CollectionExtension<T> {
   private CollectionBase<T> collection;
@@ -133,14 +135,13 @@ class CollectionFilter<T> {
 };
 
 class CollectionSyncer<T> {
-  private Logger logger;
   private CollectionBase<T> collection;
   private List<CollectionBase<T>> activeSources, stoppedSources;
   private boolean bActive;
 
   public CollectionSyncer(CollectionBase<T> collection){
     bActive = true;
-    this.logger = Logger.getLogger(CollectionBase.class.getName());
+    // this.logger = Logger.getLogger(CollectionBase.class.getName());
     this.collection = collection;
     this.activeSources = new ArrayList<CollectionBase<T>>();
     this.stoppedSources = new ArrayList<CollectionBase<T>>();
@@ -477,7 +478,7 @@ public class Collection<T> extends CollectionBase<T> {
 
   public <U> Collection<U> transform(Function<T, U> func, Object owner){
     Collection<U> target = new Collection<U>();
-    CollectionTransformer<T, U> transformer = new CollectionTransformer(this, target, func);
+    CollectionTransformer<T, U> transformer = new CollectionTransformer<>(this, target, func);
     transformer.owner = owner;
     if(collectionTransformers == null)
       collectionTransformers = new ArrayList<>();
@@ -510,7 +511,7 @@ public class Collection<T> extends CollectionBase<T> {
     return null;
   }
 
-  public CollectionExtension setLimit(int amount){
+  public CollectionExtension<T> setLimit(int amount){
     // remove existing extension first; can only be one limit extension at-a-time
     CollectionLimit<T> ext = getLimitExtension();
 
@@ -525,7 +526,7 @@ public class Collection<T> extends CollectionBase<T> {
     return ext;
   }
 
-  public CollectionExtension setLimitFifo(int amount){
+  public CollectionExtension<T> setLimitFifo(int amount){
     // remove existing extension first; can only be one limit extension at-a-time
     CollectionLimit<T> ext = getLimitExtension();
     if(ext != null)

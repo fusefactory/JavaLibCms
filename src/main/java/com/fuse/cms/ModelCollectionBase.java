@@ -51,7 +51,7 @@ public class ModelCollectionBase extends Collection<Model> {
    * @param attrName Name of the attribute for which we'll be specifying a specific required value
    * @param value Value that the specified attribute should have for the model to be accepted into our collection
    */
-  public CollectionFilter accept(String attrName, String value){
+  public CollectionFilter<Model> accept(String attrName, String value){
     return super.accept((Model m) -> {
       String modelValue = m.get(attrName, null);
       return (value == null && modelValue == null) || ((value != null) && value.equals(modelValue));

@@ -1,14 +1,12 @@
 package com.fuse.cms;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.function.Consumer;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.lang.Runnable;
+import java.util.function.Supplier;
 
 import com.fuse.utils.Event;
 import com.fuse.utils.Test;
@@ -83,6 +81,7 @@ public class CollectionBase<T> extends ArrayList<T> {
     return null;
   }
 
+  @SuppressWarnings("unchecked")
   public boolean remove(Object item){
     if(isLocked()){
       ColMod<T> m = new ColMod<T>();

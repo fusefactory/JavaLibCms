@@ -1,7 +1,8 @@
 package com.fuse.cms;
 
-import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.Supplier;
+
 import com.fuse.utils.Event;
 
 class Item {

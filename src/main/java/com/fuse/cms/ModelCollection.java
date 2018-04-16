@@ -1,23 +1,26 @@
 package com.fuse.cms;
 
-import java.util.logging.*;
-import java.util.Iterator;
-import java.nio.file.*;
-import java.nio.charset.Charset;
 import java.io.IOException;
-import org.json.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.logging.Logger;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONStringer;
 
 
 class JsonLoader {
   private ModelCollectionBase collection;
   private Logger logger;
-  private String primaryKeyAttributeName;
+  // private String primaryKeyAttributeName;
   private Charset charset; // TODO; make configurable?
 
   public JsonLoader(ModelCollectionBase collection){
     logger = Logger.getLogger(JsonLoader.class.getName());
     this.collection = collection;
-    primaryKeyAttributeName = "id";
+    // primaryKeyAttributeName = "id";
     this.charset = Charset.forName("UTF-8");
   }
 

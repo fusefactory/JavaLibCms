@@ -1,11 +1,11 @@
 package com.fuse.cms;
 
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
-import java.util.function.Function;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import com.fuse.utils.Event;
 
@@ -66,6 +66,7 @@ public class AsyncFacade<K, V>/* extends Collection<Map.Entry<K,V>> */{
         return result;
     }
 
+    @SuppressWarnings("unchecked")
     public AsyncOperation<V> getAsync(K key){
         // first see if there are any active asyncoperations for the same key
         if(bRecycleActiveOperations && activeAsyncOperations != null && activeAsyncOperations.containsKey(key))

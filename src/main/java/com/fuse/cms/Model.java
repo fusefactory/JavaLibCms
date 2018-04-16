@@ -1,11 +1,11 @@
 package com.fuse.cms;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Consumer;
 
-import org.json.*;
+import org.json.JSONObject;
 
 class ModelExtension {
   protected ModelBase model;
@@ -288,7 +288,7 @@ public class Model extends ModelBase {
     if(attributeTransformers == null)
       return;
 
-    Iterator it = attributeTransformers.iterator();
+    Iterator<AttributeTransformer> it = attributeTransformers.iterator();
     while(it.hasNext()){
       AttributeTransformer t = (AttributeTransformer)it.next();
       if(t.getOwner() == owner){
@@ -331,7 +331,7 @@ public class Model extends ModelBase {
     if(modelTransformers == null)
       return;
 
-    Iterator it = modelTransformers.iterator();
+    Iterator<ModelTransformer> it = modelTransformers.iterator();
     while(it.hasNext()){
       ModelTransformer t = (ModelTransformer)it.next();
       if(t.getOwner() == owner){
